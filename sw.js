@@ -1,7 +1,7 @@
 /* Stasera Dove? · service worker — network-first, cache fallback (offline).
    Network-first garantisce che gli aggiornamenti arrivino sempre quando c'è rete;
    offline serve l'ultima versione salvata in cache. */
-const CACHE = 'staseradove-v2';
+const CACHE = 'staseradove-v3';
 const ASSETS = [
   './', './index.html', './manifest.webmanifest',
   './icon-192.png', './icon-512.png', './apple-touch-icon.png'
