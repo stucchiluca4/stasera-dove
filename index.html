@@ -77,7 +77,9 @@ h2 span{color:var(--wine)}
 .pick-tag{font-family:"Chalkboard SE","Marker Felt",cursive;color:var(--wine);font-size:15px;margin-bottom:6px}
 .chd{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
 .namewrap{display:flex;gap:10px;align-items:center;min-width:0}
-.logo{width:36px;height:36px;border-radius:9px;object-fit:cover;background:#fff;border:1px solid var(--line);flex:0 0 auto}
+.logo-wrap{position:relative;width:38px;height:38px;flex:0 0 auto}
+.logo-wrap .mono{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;border-radius:9px;color:#fff;font-family:Georgia,serif;font-weight:700;font-size:15px;letter-spacing:.5px}
+.logo-wrap .logo{position:absolute;inset:0;width:38px;height:38px;border-radius:9px;object-fit:cover;background:#fff;border:1px solid var(--line)}
 .chd h3{font-family:Georgia,serif;font-size:18.5px;line-height:1.2}
 .sub{font-size:13px;color:var(--mut);margin-top:3px}
 .pr{font-weight:800;color:var(--olive);font-size:15px;white-space:nowrap;letter-spacing:1px}
@@ -485,11 +487,22 @@ function siteDomain(url){
   try{ return new URL(/^https?:\/\//i.test(url) ? url : 'https://'+url).hostname.replace(/^www\./,''); }
   catch(e){ return null; }
 }
-function logoHTML(website){
+function monoColor(s){
+  let h=0; for(let i=0;i<s.length;i++){ h=(h*31 + s.charCodeAt(i))>>>0; }
+  return 'hsl(' + (h%360) + ',36%,42%)';
+}
+function initials(name){
+  const w = String(name||'').trim().split(/\s+/).filter(Boolean);
+  if(!w.length) return '?';
+  return ((w[0][0]||'') + (w.length>1 ? (w[1][0]||'') : '')).toUpperCase();
+}
+function logoHTML(name, website){
+  // logo sempre presente: iniziali colorate come base; se c'è un sito, il suo
+  // logo (favicon) ci va sopra. Se il favicon non carica, restano le iniziali.
+  const mono = '<span class="mono" style="background:' + monoColor(String(name||'')) + '">' + esc(initials(name)) + '</span>';
   const d = siteDomain(website);
-  if(!d) return '';
-  // logo automatico dal sito del locale; se assente, l'handler globale lo nasconde
-  return '<img class="logo" alt="" loading="lazy" src="https://icons.duckduckgo.com/ip3/' + esc(d) + '.ico">';
+  const img = d ? '<img class="logo" alt="" loading="lazy" src="https://icons.duckduckgo.com/ip3/' + esc(d) + '.ico">' : '';
+  return '<span class="logo-wrap">' + mono + img + '</span>';
 }
 function today(){ return new Date().toISOString().slice(0,10); }
 function todayDow(){ return new Date().getDay(); }
@@ -641,7 +654,7 @@ function cardHTML(r, opts){
   return '' +
   '<div class="card' + (opts.pick ? ' pick' : '') + '">' +
     (opts.pick ? '<div class="pick-tag">🎲 Il destino ha deciso…</div>' : '') +
-    '<div class="chd"><div class="namewrap">' + logoHTML(r.website) + '<div><h3>' + esc(r.n) + '</h3>' +
+    '<div class="chd"><div class="namewrap">' + logoHTML(r.n, r.website) + '<div><h3>' + esc(r.n) + '</h3>' +
     '<div class="sub">📍 ' + esc(r.t) + ' · ' + esc(r.z) + '</div></div></div>' +
     '<div class="pr">' + '€'.repeat(r.p||2) + '</div></div>' +
     '<div class="tags">' + r.ty.map(function(t){ return '<span class="tag">' + esc(t) + '</span>'; }).join('') + rateTag + closedTag + '</div>' +
@@ -1025,7 +1038,7 @@ async function discover(btn){
     S.disc = Array.isArray(out) ? out.slice(0,4) : [];
     if(!S.disc.length) throw new Error('empty');
     qs('#disclist').innerHTML = S.disc.map(function(d,i){
-      return '<div class="card"><div class="chd"><div class="namewrap">' + logoHTML(d.website) + '<div><h3>' + esc(d.name) + '</h3>' +
+      return '<div class="card"><div class="chd"><div class="namewrap">' + logoHTML(d.name, d.website) + '<div><h3>' + esc(d.name) + '</h3>' +
         '<div class="sub">📍 ' + esc(d.town) + '</div></div></div>' +
         '<div class="pr">' + '€'.repeat(Math.min(4, Math.max(1, d.price||2))) + '</div></div>' +
         '<div class="tags">' + (d.types||[]).map(function(t){ return '<span class="tag">' + esc(t) + '</span>'; }).join('') + '</div>' +
