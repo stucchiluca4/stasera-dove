@@ -1,6 +1,6 @@
 # 🍽️ Stasera Dove? — Guida completa (V2)
 
-App decisionale per le cene di Simone & Sara. I **vostri 58 locali** già caricati,
+App decisionale per le vostre cene. I **vostri 58 locali** già caricati,
 domande mirate, recensioni personali con **foto**, **classifica annuale**, filtro
 **"aperto stasera"** e scoperta di posti nuovi via AI (dentro Claude). Ora anche
 **pubblicabile online** e **installabile su iPhone** come una vera app, funzionante
@@ -78,7 +78,7 @@ Da incollare in una **nuova chat Claude**. È autosufficiente.
 ```text
 Crea una web-app HTML installabile (PWA, mobile-first iOS, offline via service worker,
 zero dipendenze esterne) chiamata "Stasera Dove?" per decidere dove andare a cena.
-Utenti: Simone & Sara, zona Bergamo/Brianza. Persistenza: window.storage con chiave
+Utenti: una coppia, zona Bergamo/Brianza. Persistenza: window.storage con chiave
 "staseradove:data" se presente (ambiente Claude, con funzioni AI attive); altrimenti
 localStorage (dati sul dispositivo, funzioni AI disattivate e nascoste); fallback
 in-memory con banner se nessuno dei due è disponibile.
@@ -111,7 +111,7 @@ concatena i blocchi text, estrai JSON con try/catch):
 
 TAB "Archivio": ricerca live, ➕ nuovo, modifica/elimina, ⬇️ backup / ⬆️ import JSON.
 TAB "Diario": "✅ Scelto!" crea una voce pendente (evita doppioni); recensione = chi
-c'era [Simone/Sara/Entrambi], stelle 1-5, spesa €/persona, data, note, FOTO del piatto
+c'era [Solo io/In due/Con amici], stelle 1-5, spesa €/persona, data, note, FOTO del piatto
 (compressa via canvas a max 1200px JPEG ~0.72, salvata come dataURL, con lightbox);
 pendenti in evidenza, storico per data.
 TAB "Classifica": selettore anno + "Sempre"; tessere n. cene, voto medio, spesa media,
@@ -133,7 +133,7 @@ come nel file esistente. Valida la sintassi JS, testa il flusso completo e conse
 ## 6 · Idee per la V3 (basta chiederle)
 
 - Sincronizzazione reale tra i due iPhone (PWA + Supabase/back-end)
-- "Chi decide stasera?" — turno alternato Simone/Sara
+- "Chi decide stasera?" — turno alternato tra i due
 - Filtro orari reali via AI ("aperto adesso" verificato sul web)
 - Note vocali o più foto per recensione
 

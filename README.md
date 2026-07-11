@@ -1,6 +1,6 @@
-# 🍽️ Stasera Dove? — V2
+# 🍽️ Stasera Dove? — V3
 
-App per decidere dove andare a cena (Simone & Sara). I vostri locali già caricati,
+App per decidere dove andare a cena, pensata per due. I vostri locali già caricati,
 consiglio con punteggio, diario delle cene con foto, classifica annuale e filtro
 "aperto stasera". Funziona **offline** e si installa come icona sull'iPhone.
 
@@ -18,8 +18,8 @@ Tutto in questo repo, zero dipendenze da installare.
 | `icon-*.png`, `apple-touch-icon.png` | L'icona sulla schermata Home |
 
 I dati (archivio, diario, foto) si salvano **su questo dispositivo** (nel browser).
-Non serve login. Nota: i dati **non** si sincronizzano tra il tuo iPhone e quello
-di Sara — ognuno ha i suoi. Per spostarli usa **⬇️ Backup / ⬆️ Importa** dall'Archivio.
+Non serve login. Nota: i dati **non** si sincronizzano
+tra i vari iPhone — ognuno ha i suoi. Per spostarli usa **⬇️ Backup / ⬆️ Importa** dall'Archivio.
 
 ---
 
@@ -45,7 +45,7 @@ Quello è il link della tua app. 🎉
 
 ## 📱 Aggiungere l'icona sull'iPhone
 
-Da fare su **entrambi** gli iPhone (tuo e di Sara).
+Da fare su ogni iPhone che userà l'app.
 
 1. Apri il link qui sopra in **Safari** (non Chrome).
 2. Tocca il tasto **Condividi** (il quadrato con la freccia in su ↑).

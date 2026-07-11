@@ -1,14 +1,14 @@
 {
   "name": "Stasera Dove?",
   "short_name": "Stasera Dove?",
-  "description": "App decisionale per le cene di Simone & Sara: consiglia dove andare a cena tra i vostri locali.",
+  "description": "App per decidere dove andare a cena: archivio locali, consigli su misura, diario con foto e classifiche.",
   "lang": "it",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#1E2721",
-  "theme_color": "#1E2721",
+  "background_color": "#0b1120",
+  "theme_color": "#0f172a",
   "icons": [
     { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
     { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
