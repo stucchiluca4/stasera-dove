@@ -535,7 +535,7 @@ const KEY = 'staseradove:data';
 /* Archivio condiviso (Firebase Firestore, REST — nessuna dipendenza).
    Vuoto = sync spento, app solo-locale. L'apiKey web di Firebase è un
    identificatore pubblico: la protezione sta nelle Security Rules. */
-const SYNC = Object.assign({ projectId:'', apiKey:'' }, window.SYNC_OVERRIDE || {});
+const SYNC = Object.assign({ projectId:'stasera-dove', apiKey:'AIzaSyB-m2ee3o0HVsy2aLanPPZUgBlJNQO8qUw' }, window.SYNC_OVERRIDE || {});
 const TYPES = ['Pizzeria','Ristorante','Carne','Pesce','Brunch','Burger','Griglieria','Galletto','Cinese'];
 const GROUPS = {
   pizza:['Pizzeria'], risto:['Ristorante'], carne:['Carne','Griglieria','Galletto'],
@@ -791,12 +791,23 @@ async function fsList(){
   }while(token);
   return out;
 }
-async function fsPut(r){
-  const res = await fetch(fsBase() + '/locali/' + enc(r.id) + '?key=' + SYNC.apiKey, {
-    method:'PATCH', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({fields: toFsFields(r)})
-  });
-  if(!res.ok) throw new Error('fs put ' + res.status);
+async function fsBatchWrite(docs){
+  // scrive fino a 500 documenti in un'unica richiesta (limite Firestore) via
+  // :commit — molto più veloce e robusta di N scritture sequenziali una a una
+  for(let i=0; i<docs.length; i+=500){
+    const chunk = docs.slice(i, i+500);
+    const writes = chunk.map(function(r){
+      return { update: {
+        name: 'projects/' + SYNC.projectId + '/databases/(default)/documents/locali/' + r.id,
+        fields: toFsFields(r)
+      } };
+    });
+    const res = await fetch(fsBase() + ':commit?key=' + SYNC.apiKey, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({writes: writes})
+    });
+    if(!res.ok) throw new Error('fs commit ' + res.status);
+  }
 }
 let syncBusy=false, syncQueued=false, syncAnnounced=false, syncTimer=null;
 async function syncNow(){
@@ -814,7 +825,7 @@ async function syncNow(){
       else if((lr.updatedAt||0) > (rr.updatedAt||0)){ toPush.push(lr); }
     });
     S.db.forEach(function(lr){ if(!rmap[lr.id]) toPush.push(lr); });
-    for(let i=0; i<toPush.length; i++){ await fsPut(toPush[i]); }
+    if(toPush.length) await fsBatchWrite(toPush);
     if(changed){ normalizeDb(); await persist(); renderAll(); }
     if(!syncAnnounced && (remote.length || toPush.length)){
       syncAnnounced = true; toast('☁️ Archivio condiviso sincronizzato');
