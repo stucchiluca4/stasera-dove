@@ -15,7 +15,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-<title>Stasera Dove? · V4</title>
+<title>Stasera Dove? · V5</title>
 <style>
 :root{
   --bg:#0f172a;            /* slate profondo */
@@ -258,6 +258,17 @@ nav button{
 nav button b{display:block;font-size:20px;font-weight:400;margin-bottom:3px;filter:grayscale(.4) opacity(.75);transition:filter .25s,transform .25s}
 nav button.on{color:#a5f3fc;text-shadow:0 0 16px var(--cyan-glow)}
 nav button.on b{filter:none;transform:translateY(-1px)}
+nav button b{position:relative;display:inline-block}
+nav button.dot b::after{content:"";position:absolute;top:-2px;right:-9px;width:8px;height:8px;border-radius:99px;background:#f87171;box-shadow:0 0 10px rgba(248,113,113,.85)}
+/* ---------- Novità (feed) ---------- */
+.feedrow{display:flex;gap:11px;background:var(--card);border:1px solid var(--line-soft);border-radius:14px;padding:12px 14px;margin:9px 0;align-items:flex-start}
+.feedrow .fi{font-size:18px;line-height:1.3}
+.feedrow .fbody{flex:1;min-width:0}
+.feedrow .ft{font-size:13.5px;color:#cbd5e1;line-height:1.45}
+.feedrow .ft b{color:var(--txt)}
+.feedrow .fx{font-size:10.5px;color:var(--mut);white-space:nowrap;padding-top:3px}
+.fnote{color:var(--mut);font-size:12.5px;font-style:italic;margin-top:4px}
+.fphoto{margin-top:8px;border-radius:10px;max-height:120px;max-width:100%;cursor:zoom-in;display:block}
 /* ---------- Modali ---------- */
 .overlay{position:fixed;inset:0;background:rgba(3,7,17,.6);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);z-index:90;display:none}
 .overlay.show{display:block}
@@ -323,7 +334,7 @@ footer{color:#475569;font-size:10.5px;text-align:center;padding:18px 0 8px;lette
 <canvas id="bg" aria-hidden="true"></canvas>
 
 <header>
-  <div class="stamp">BUILD V4</div>
+  <div class="stamp">BUILD V5</div>
   <div class="brand">Stasera <em>Dove?</em><small>TACCUINO DEI RISTORANTI</small></div>
   <div class="board-line" id="boardline">Il menu di stasera si scrive qui…</div>
 </header>
@@ -409,20 +420,31 @@ footer{color:#475569;font-size:10.5px;text-align:center;padding:18px 0 8px;lette
     <div id="diarylist"></div>
   </section>
 
+  <!-- ============ VISTA: NOVITÀ (feed del gruppo) ============ -->
+  <section id="v-feed" hidden>
+    <h2>Novità del <span>gruppo</span></h2>
+    <div class="qcard" style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-right:0;margin-left:0">
+      <div style="font-size:14px;min-width:0">👤 <b id="prof-name">—</b></div>
+      <button class="ab2" style="flex:0 0 auto;padding:9px 13px" data-act="open-name">Cambia nome</button>
+    </div>
+    <div id="feedlist"></div>
+  </section>
+
   <!-- ============ VISTA: CLASSIFICA ============ -->
   <section id="v-stats" hidden>
-    <h2>La vostra <span>classifica</span></h2>
+    <h2>La classifica del <span>gruppo</span></h2>
     <div class="yearbar" id="yearbar"></div>
     <div id="statsbody"></div>
   </section>
 
 </main>
 
-<footer>STASERA DOVE? · BUILD V4 · DATI SALVATI SU QUESTO DISPOSITIVO</footer>
+<footer>STASERA DOVE? · BUILD V5 · ARCHIVIO E RECENSIONI CONDIVISI</footer>
 
 <nav>
   <button class="on" data-nav="v-wizard"><b>🍽️</b>Stasera</button>
   <button data-nav="v-list"><b>📚</b>Archivio</button>
+  <button data-nav="v-feed"><b>🔔</b>Novità</button>
   <button data-nav="v-diary"><b>⭐</b>Diario</button>
   <button data-nav="v-stats"><b>🏆</b>Classifica</button>
 </nav>
@@ -520,13 +542,23 @@ footer{color:#475569;font-size:10.5px;text-align:center;padding:18px 0 8px;lette
   </div>
 </div>
 
+<div class="modal" id="m-name">
+  <div class="modal-inner">
+    <button class="mclose" data-act="close-modals">✕</button>
+    <h3>👤 Come ti chiami?</h3>
+    <div class="msub">Il nome firma le tue recensioni e i locali che aggiungi: gli amici lo vedranno nella sezione 🔔 Novità.</div>
+    <div class="field"><label>Il tuo nome</label><input id="nm-name" placeholder="es. Luca" maxlength="20"></div>
+    <button class="btn" data-act="save-name">Salva</button>
+  </div>
+</div>
+
 <div id="toast"></div>
 <div id="lightbox" data-act="close-lightbox"><img id="lightbox-img" alt=""></div>
 
 <script>
 'use strict';
 /* ============================================================
-   Stasera Dove? · V4 — dinner decider
+   Stasera Dove? · V5 — dinner decider
    Single-file, zero dipendenze. Persistenza: window.storage se
    dentro Claude, altrimenti localStorage. AI attiva solo in Claude.
    ============================================================ */
@@ -614,8 +646,10 @@ const S = {
   disc:[], storageOK:true, claudeEnv:false,
   editingId:null, reviewRid:null, reviewEditId:null,
   mRating:0, mWho:'In due', mPhoto:null, edTypes:[], edClosed:[], edPhoto:null,
-  statYear:null, spotIdx:0, spotOpen:false
+  statYear:null, spotIdx:0, spotOpen:false,
+  profile:{name:''}, seenTs:0
 };
+function myName(){ return (S.profile && S.profile.name || '').trim(); }
 
 /* ---------- Utility ---------- */
 function qs(s){ return document.querySelector(s); }
@@ -730,7 +764,7 @@ function setupStorage(){
 async function persist(){
   if(!S.storageOK) return;
   try{
-    const res = await window.storage.set(KEY, JSON.stringify({v:2, db:S.db, rev:S.rev}));
+    const res = await window.storage.set(KEY, JSON.stringify({v:3, db:S.db, rev:S.rev, profile:S.profile, seenTs:S.seenTs}));
     if(res===false) toast('⚠️ Salvataggio non riuscito');
   }catch(e){
     if(e && (e.name==='QuotaExceededError' || /quota/i.test(String(e.message||e))))
@@ -745,9 +779,20 @@ function normalizeDb(){
     if(!('photo' in r)) r.photo = null;
     if(typeof r.updatedAt !== 'number') r.updatedAt = 0;
     if(typeof r.deleted !== 'boolean') r.deleted = false;
+    if(!('addedBy' in r)) r.addedBy = null;
+    if(typeof r.createdAt !== 'number') r.createdAt = 0;
+  });
+}
+function normalizeRev(){
+  S.rev.forEach(function(x){
+    if(typeof x.updatedAt !== 'number') x.updatedAt = 0;
+    if(typeof x.deleted !== 'boolean') x.deleted = false;
+    if(!('by' in x)) x.by = null;
+    if(!('photo' in x)) x.photo = null;
   });
 }
 function activeDb(){ return S.db.filter(function(r){ return !r.deleted; }); }
+function activeRev(){ return S.rev.filter(function(x){ return !x.deleted; }); }
 
 /* ---------- Archivio condiviso: sync Firestore via REST ---------- */
 function syncEnabled(){ return !!(SYNC.projectId && SYNC.apiKey); }
@@ -761,6 +806,8 @@ function toFsFields(r){
     closed:{arrayValue:{values:(r.closed||[]).map(function(x){ return {integerValue:String(x)}; })}},
     website:sv(r.website), phone:sv(r.phone), booking:sv(r.booking), blurb:sv(r.blurb),
     photo:(r.photo && r.photo.length < 900000) ? sv(r.photo) : {nullValue:null},
+    addedBy:sv(r.addedBy),
+    createdAt:{integerValue:String(r.createdAt||0)},
     updatedAt:{integerValue:String(r.updatedAt||0)},
     deleted:{booleanValue:!!r.deleted}
   };
@@ -775,31 +822,59 @@ function fromFsDoc(doc){
     p: parseInt((f.p&&f.p.integerValue)||'2',10)||2,
     closed: ((f.closed&&f.closed.arrayValue&&f.closed.arrayValue.values)||[]).map(function(v){ return parseInt(v.integerValue,10); }).filter(function(n){ return !isNaN(n); }),
     website: gs('website'), phone: gs('phone'), booking: gs('booking'), blurb: gs('blurb'), photo: gs('photo'),
+    addedBy: gs('addedBy'),
+    createdAt: parseInt((f.createdAt&&f.createdAt.integerValue)||'0',10)||0,
     updatedAt: parseInt((f.updatedAt&&f.updatedAt.integerValue)||'0',10)||0,
     deleted: !!(f.deleted && f.deleted.booleanValue)
   };
 }
-async function fsList(){
+function toFsRevFields(x){
+  function sv(v){ return v==null ? {nullValue:null} : {stringValue:String(v)}; }
+  return {
+    rid:sv(x.rid), who:sv(x.who), date:sv(x.date), note:sv(x.note||''),
+    rating:{integerValue:String(x.rating||0)},
+    spend:(x.spend==null ? {nullValue:null} : {doubleValue:x.spend}),
+    photo:(x.photo && x.photo.length < 900000) ? sv(x.photo) : {nullValue:null},
+    by:sv(x.by),
+    updatedAt:{integerValue:String(x.updatedAt||0)},
+    deleted:{booleanValue:!!x.deleted}
+  };
+}
+function fromFsRevDoc(doc){
+  const f = doc.fields || {};
+  function gs(k){ const v=f[k]; return (v && 'stringValue' in v) ? v.stringValue : null; }
+  const sp = f.spend || {};
+  return {
+    id: doc.name.split('/').pop(),
+    rid: gs('rid'), who: gs('who')||'—', date: gs('date')||'', note: gs('note')||'',
+    rating: parseInt((f.rating&&f.rating.integerValue)||'0',10)||0,
+    spend: ('doubleValue' in sp) ? parseFloat(sp.doubleValue) : (('integerValue' in sp) ? parseInt(sp.integerValue,10) : null),
+    photo: gs('photo'), by: gs('by'),
+    updatedAt: parseInt((f.updatedAt&&f.updatedAt.integerValue)||'0',10)||0,
+    deleted: !!(f.deleted && f.deleted.booleanValue)
+  };
+}
+async function fsList(col, fromDoc){
   let out = [], token = null;
   do{
-    const u = fsBase() + '/locali?pageSize=300&key=' + SYNC.apiKey + (token ? ('&pageToken=' + enc(token)) : '');
+    const u = fsBase() + '/' + col + '?pageSize=300&key=' + SYNC.apiKey + (token ? ('&pageToken=' + enc(token)) : '');
     const res = await fetch(u);
     if(!res.ok) throw new Error('fs ' + res.status);
     const d = await res.json();
-    (d.documents||[]).forEach(function(doc){ out.push(fromFsDoc(doc)); });
+    (d.documents||[]).forEach(function(doc){ out.push(fromDoc(doc)); });
     token = d.nextPageToken || null;
   }while(token);
   return out;
 }
-async function fsBatchWrite(docs){
+async function fsBatchWrite(col, docs, toFields){
   // scrive fino a 500 documenti in un'unica richiesta (limite Firestore) via
   // :commit — molto più veloce e robusta di N scritture sequenziali una a una
   for(let i=0; i<docs.length; i+=500){
     const chunk = docs.slice(i, i+500);
     const writes = chunk.map(function(r){
       return { update: {
-        name: 'projects/' + SYNC.projectId + '/databases/(default)/documents/locali/' + r.id,
-        fields: toFsFields(r)
+        name: 'projects/' + SYNC.projectId + '/databases/(default)/documents/' + col + '/' + r.id,
+        fields: toFields(r)
       } };
     });
     const res = await fetch(fsBase() + ':commit?key=' + SYNC.apiKey, {
@@ -809,28 +884,39 @@ async function fsBatchWrite(docs){
     if(!res.ok) throw new Error('fs commit ' + res.status);
   }
 }
+async function syncCollection(col, arr, fromDoc, toFields, canPush){
+  const remote = await fsList(col, fromDoc);
+  const rmap = {}; remote.forEach(function(r){ rmap[r.id] = r; });
+  let changed = false; const toPush = [];
+  remote.forEach(function(rr){
+    const lr = arr.find(function(x){ return x.id === rr.id; });
+    if(!lr){ arr.push(rr); changed = true; }
+    else if((rr.updatedAt||0) > (lr.updatedAt||0)){ Object.assign(lr, rr); changed = true; }
+    else if((lr.updatedAt||0) > (rr.updatedAt||0) && canPush(lr)){ toPush.push(lr); }
+  });
+  arr.forEach(function(lr){ if(!rmap[lr.id] && canPush(lr)) toPush.push(lr); });
+  if(toPush.length) await fsBatchWrite(col, toPush, toFields);
+  return changed;
+}
 let syncBusy=false, syncQueued=false, syncAnnounced=false, syncTimer=null;
 async function syncNow(){
   if(!syncEnabled()) return;
   if(syncBusy){ syncQueued = true; return; }
   syncBusy = true;
+  let changed = false, touched = false;
   try{
-    const remote = await fsList();
-    const rmap = {}; remote.forEach(function(r){ rmap[r.id] = r; });
-    let changed = false; const toPush = [];
-    remote.forEach(function(rr){
-      const lr = S.db.find(function(x){ return x.id === rr.id; });
-      if(!lr){ S.db.push(rr); changed = true; }
-      else if((rr.updatedAt||0) > (lr.updatedAt||0)){ Object.assign(lr, rr); changed = true; }
-      else if((lr.updatedAt||0) > (rr.updatedAt||0)){ toPush.push(lr); }
-    });
-    S.db.forEach(function(lr){ if(!rmap[lr.id]) toPush.push(lr); });
-    if(toPush.length) await fsBatchWrite(toPush);
-    if(changed){ normalizeDb(); await persist(); renderAll(); }
-    if(!syncAnnounced && (remote.length || toPush.length)){
-      syncAnnounced = true; toast('☁️ Archivio condiviso sincronizzato');
-    }
+    const c = await syncCollection('locali', S.db, fromFsDoc, toFsFields, function(){ return true; });
+    changed = changed || c; touched = true;
   }catch(e){ /* offline o permessi: si ritenta al prossimo aggancio */ }
+  try{
+    // solo recensioni completate (rating>0): la lista "da recensire" resta personale
+    const c = await syncCollection('recensioni', S.rev, fromFsRevDoc, toFsRevFields, function(x){ return x.rating>0; });
+    changed = changed || c;
+  }catch(e){ /* regole non ancora aggiornate o offline: le recensioni restano locali */ }
+  if(changed){ normalizeDb(); normalizeRev(); await persist(); renderAll(); }
+  if(!syncAnnounced && touched){
+    syncAnnounced = true; toast('☁️ Archivio condiviso sincronizzato');
+  }
   syncBusy = false;
   if(syncQueued){ syncQueued = false; scheduleSync(); }
 }
@@ -846,18 +932,20 @@ async function loadData(){
     if(!d || typeof d !== 'object') throw 0;
     S.db = Array.isArray(d.db) ? d.db : [];
     S.rev = Array.isArray(d.rev) ? d.rev : [];
+    S.profile = (d.profile && typeof d.profile === 'object') ? d.profile : {name:''};
+    S.seenTs = (typeof d.seenTs === 'number') ? d.seenTs : 0;
     if(!S.db.length){ S.db = SEED.slice(); await persist(); }
-    normalizeDb();
+    normalizeDb(); normalizeRev();
   }catch(e){
     S.db = SEED.slice(); S.rev = [];
-    normalizeDb();
+    normalizeDb(); normalizeRev();
     await persist();
   }
   if(!S.storageOK) qs('#membanner').hidden = false;
 }
 
 /* ---------- Recensioni: helper ---------- */
-function reviewsFor(rid){ return S.rev.filter(function(x){ return x.rid===rid; }); }
+function reviewsFor(rid){ return activeRev().filter(function(x){ return x.rid===rid; }); }
 function ratingInfo(rid){
   const done = reviewsFor(rid).filter(function(x){ return x.rating>0; });
   if(!done.length) return null;
@@ -865,7 +953,10 @@ function ratingInfo(rid){
   return {avg:avg, count:done.length};
 }
 function lastVisitTs(rid){
-  const v = reviewsFor(rid).map(function(x){ return new Date(x.date).getTime(); });
+  // la penalità "ci sei stato da poco" è personale: conta solo le tue visite
+  const me = myName();
+  const v = reviewsFor(rid).filter(function(x){ return !x.by || !me || x.by === me; })
+    .map(function(x){ return new Date(x.date).getTime(); });
   return v.length ? Math.max.apply(null,v) : 0;
 }
 function isClosedToday(r){ return Array.isArray(r.closed) && r.closed.indexOf(todayDow()) > -1; }
@@ -986,7 +1077,7 @@ function renderSpot(){
     '</div>';
   const body =
     '<div class="spot-body">' +
-      '<div class="tags" style="margin-top:0">' + r.ty.map(function(t){ return '<span class="tag">' + esc(t) + '</span>'; }).join('') + rateTag + closedTag + '</div>' +
+      '<div class="tags" style="margin-top:0">' + r.ty.map(function(t){ return '<span class="tag">' + esc(t) + '</span>'; }).join('') + rateTag + closedTag + (r.addedBy ? '<span class="tag">➕ ' + esc(r.addedBy) + '</span>' : '') + '</div>' +
       (r.blurb ? '<p class="blurb">' + esc(r.blurb) + '</p>' : '') +
       (x.why && x.why.length ? '<div class="why">✔ ' + x.why.map(esc).join(' · ') + '</div>' : '') +
       spotActionsHTML(r) +
@@ -1061,7 +1152,7 @@ function cardHTML(r, opts){
     '<div class="chd"' + headAttr + '><div class="namewrap">' + logoHTML(r.n, r.website) + '<div><h3>' + esc(r.n) + '</h3>' +
     '<div class="sub">📍 ' + esc(r.t) + ' · ' + esc(r.z) + '</div></div></div>' +
     '<div class="pr">' + '€'.repeat(r.p||2) + '</div></div>' +
-    '<div class="tags">' + r.ty.map(function(t){ return '<span class="tag">' + esc(t) + '</span>'; }).join('') + rateTag + closedTag + '</div>' +
+    '<div class="tags">' + r.ty.map(function(t){ return '<span class="tag">' + esc(t) + '</span>'; }).join('') + rateTag + closedTag + (r.addedBy ? '<span class="tag">➕ ' + esc(r.addedBy) + '</span>' : '') + '</div>' +
     (r.blurb ? '<p class="blurb">' + esc(r.blurb) + '</p>' : '') +
     (opts.why && opts.why.length ? '<div class="why">✔ ' + opts.why.map(esc).join(' · ') + '</div>' : '') +
     '<div class="acts">' +
@@ -1110,7 +1201,7 @@ function renderList(){
     if(!q) return true;
     return (r.n + ' ' + r.t + ' ' + r.z + ' ' + r.ty.join(' ')).toLowerCase().indexOf(q) > -1;
   });
-  qs('#dbcount').textContent = list.length + ' locali' + (q ? ' trovati' : ' in archivio') + ' · ' + S.rev.filter(function(x){return x.rating>0;}).length + ' recensioni';
+  qs('#dbcount').textContent = list.length + ' locali' + (q ? ' trovati' : ' in archivio') + ' · ' + activeRev().filter(function(x){return x.rating>0;}).length + ' recensioni';
   qs('#dblist').innerHTML = list.map(function(r){ return cardHTML(r, {}); }).join('') ||
     '<div class="empty"><b>Archivio vuoto</b>Aggiungi il primo locale con ➕.</div>';
 }
@@ -1119,16 +1210,18 @@ function renderList(){
 function renderDiary(){
   const el = qs('#diarylist');
   if(!el) return;
-  if(!S.rev.length){
+  const revs = activeRev();
+  if(!revs.length){
     el.innerHTML = '<div class="empty"><b>Il diario è ancora bianco</b>Quando scegliete un posto con ✅ Scelto!, lo ritroverete qui da recensire.</div>';
     return;
   }
   const byId = {}; S.db.forEach(function(r){ byId[r.id] = r; });
-  const pend = S.rev.filter(function(x){ return !(x.rating>0); }).sort(function(a,b){ return b.date.localeCompare(a.date); });
-  const done = S.rev.filter(function(x){ return x.rating>0; }).sort(function(a,b){ return b.date.localeCompare(a.date); });
+  const me = myName();
+  const pend = revs.filter(function(x){ return !(x.rating>0); }).sort(function(a,b){ return b.date.localeCompare(a.date); });
+  const done = revs.filter(function(x){ return x.rating>0; }).sort(function(a,b){ return b.date.localeCompare(a.date); });
   let html = '';
   if(pend.length){
-    html += '<div class="qlabel" style="margin-top:14px">Da recensire</div>';
+    html += '<div class="qlabel" style="margin-top:14px">Da recensire (solo tu li vedi)</div>';
     html += pend.map(function(x){
       const r = byId[x.rid];
       return '<div class="rev pending"><h4>' + esc(r ? r.n : 'Locale rimosso') + '</h4>' +
@@ -1137,25 +1230,79 @@ function renderDiary(){
     }).join('');
   }
   if(done.length){
-    html += '<div class="qlabel" style="margin-top:16px">Le vostre cene</div>';
+    html += '<div class="qlabel" style="margin-top:16px">Le cene del gruppo</div>';
     html += done.map(function(x){
       const r = byId[x.rid];
+      const mine = !x.by || (me && x.by === me);   // le recensioni senza firma restano modificabili da questo telefono
       return '<div class="rev"><h4>' + esc(r ? r.n : 'Locale rimosso') + '</h4>' +
-        '<div class="meta">' + esc(x.date) + ' · ' + esc(x.who) + (x.spend ? ' · ' + esc(x.spend) + ' €/pers.' : '') + '</div>' +
+        '<div class="meta">' + (x.by ? '👤 ' + esc(x.by) + ' · ' : '') + esc(x.date) + ' · ' + esc(x.who) + (x.spend ? ' · ' + esc(x.spend) + ' €/pers.' : '') + '</div>' +
         '<div class="stars">' + '★'.repeat(x.rating) + '<span style="color:#334155">' + '★'.repeat(5-x.rating) + '</span></div>' +
         (x.note ? '<p>' + esc(x.note) + '</p>' : '') +
         (x.photo ? '<img class="revphoto" src="' + esc(x.photo) + '" data-act="zoom" data-id="' + x.id + '" alt="foto">' : '') +
-        '<button class="ab2" style="margin-top:9px" data-act="pending-review" data-id="' + x.id + '">✏️ Modifica</button></div>';
+        (mine ? '<button class="ab2" style="margin-top:9px" data-act="pending-review" data-id="' + x.id + '">✏️ Modifica</button>' : '') +
+        '</div>';
     }).join('');
   }
   el.innerHTML = html;
+}
+
+/* ---------- Novità: feed del gruppo ---------- */
+function tAgo(ts){
+  const d = Date.now() - ts;
+  if(d < 36e5) return Math.max(1, Math.round(d/6e4)) + ' min fa';
+  if(d < 864e5) return Math.round(d/36e5) + ' h fa';
+  if(d < 864e5*30) return Math.round(d/864e5) + ' g fa';
+  try{ return new Date(ts).toLocaleDateString('it-IT'); }catch(e){ return ''; }
+}
+function feedItems(){
+  const byId = {}; S.db.forEach(function(r){ byId[r.id] = r; });
+  const items = [];
+  S.db.forEach(function(r){
+    if(!r.deleted && r.addedBy && r.createdAt){
+      items.push({ts:r.createdAt, ico:'📍',
+        html:'<b>' + esc(r.addedBy) + '</b> ha aggiunto <b>' + esc(r.n) + '</b>' + (r.t && r.t !== '—' ? ' · ' + esc(r.t) : '')});
+    }
+  });
+  activeRev().forEach(function(x){
+    if(!(x.rating>0) || !x.by) return;
+    const r = byId[x.rid];
+    items.push({ts:(x.updatedAt || new Date(x.date).getTime() || 0), ico:'⭐', photo:x.photo||null, revId:x.id,
+      html:'<b>' + esc(x.by) + '</b> ha provato <b>' + esc(r ? r.n : 'un locale') + '</b> — ' +
+        '<span style="color:var(--gold)">' + '★'.repeat(x.rating) + '</span>' +
+        (x.note ? '<div class="fnote">“' + esc(x.note.length>90 ? x.note.slice(0,90)+'…' : x.note) + '”</div>' : '')});
+  });
+  items.sort(function(a,b){ return b.ts - a.ts; });
+  return items.slice(0,100);
+}
+function updateFeedDot(){
+  const btn = qs('nav button[data-nav="v-feed"]');
+  if(!btn) return;
+  const items = feedItems();
+  btn.classList.toggle('dot', !!(items.length && items[0].ts > (S.seenTs||0)));
+}
+function renderFeed(){
+  const nameEl = qs('#prof-name');
+  if(nameEl) nameEl.textContent = myName() || 'Senza nome';
+  const el = qs('#feedlist');
+  if(!el) return;
+  const items = feedItems();
+  if(!items.length){
+    el.innerHTML = '<div class="empty"><b>Ancora nessuna novità</b>Quando qualcuno del gruppo aggiunge un locale o scrive una recensione, lo leggerai qui.</div>';
+    return;
+  }
+  el.innerHTML = items.map(function(it){
+    return '<div class="feedrow"><div class="fi">' + it.ico + '</div>' +
+      '<div class="fbody"><div class="ft">' + it.html + '</div>' +
+      (it.photo ? '<img class="fphoto" src="' + esc(it.photo) + '" data-act="zoom" data-id="' + esc(it.revId) + '" alt="foto">' : '') +
+      '</div><div class="fx">' + esc(tAgo(it.ts)) + '</div></div>';
+  }).join('');
 }
 
 /* ---------- Classifica ---------- */
 function renderStats(){
   const bar = qs('#yearbar'), body = qs('#statsbody');
   if(!bar || !body) return;
-  const rated = S.rev.filter(function(x){ return x.rating>0; });
+  const rated = activeRev().filter(function(x){ return x.rating>0; });
   if(!rated.length){
     bar.innerHTML = '';
     body.innerHTML = '<div class="empty"><b>Nessuna cena ancora</b>Recensite qualche locale dal Diario e qui comparirà la vostra classifica.</div>';
@@ -1274,16 +1421,18 @@ function saveReview(){
     spend: parseFloat(qs('#rv-spend').value) || null,
     date: qs('#rv-date').value || today(),
     note: qs('#rv-note').value.trim(),
-    photo: S.mPhoto || null
+    photo: S.mPhoto || null,
+    by: myName() || null,
+    updatedAt: Date.now()
   };
   if(S.reviewEditId){
     const ex = S.rev.find(function(x){ return x.id===S.reviewEditId; });
     Object.assign(ex, data);
   } else {
-    S.rev.push(Object.assign({id:'rv'+Date.now()}, data));
+    S.rev.push(Object.assign({id:'rv'+Date.now(), deleted:false}, data));
   }
-  persist(); closeModals(); renderAll();
-  toast('⭐ Recensione salvata');
+  persist(); scheduleSync(); closeModals(); renderAll();
+  toast(myName() ? '⭐ Recensione di ' + myName() + ' salvata — visibile al gruppo' : '⭐ Recensione salvata');
 }
 
 /* ---------- Foto: compressione ---------- */
@@ -1354,7 +1503,7 @@ function saveEdit(){
     const r = S.db.find(function(x){ return x.id===S.editingId; });
     Object.assign(r, data);
   } else {
-    S.db.push(Object.assign({id:'u'+Date.now(), blurb:null, deleted:false}, data));
+    S.db.push(Object.assign({id:'u'+Date.now(), blurb:null, deleted:false, addedBy: myName() || null, createdAt: Date.now()}, data));
   }
   persist(); scheduleSync(); closeModals(); renderAll(); toast('💾 Locale salvato');
 }
@@ -1466,7 +1615,7 @@ function addDiscovered(idx){
     ty: validTy.length ? validTy : ['Ristorante'],
     p: Math.min(4, Math.max(1, d.price||2)), closed:[], photo:null,
     website:d.website||null, phone:d.phone||null, booking:null, blurb:d.why||null,
-    updatedAt: Date.now(), deleted:false
+    updatedAt: Date.now(), deleted:false, addedBy: myName() || null, createdAt: Date.now()
   });
   persist(); scheduleSync(); renderAll();
   toast('➕ ' + (d.name||'Locale') + ' aggiunto: controlla la zona con ✏️');
@@ -1510,10 +1659,12 @@ function showView(id){
   if(id==='v-list') renderList();
   if(id==='v-diary') renderDiary();
   if(id==='v-stats') renderStats();
+  if(id==='v-feed'){ renderFeed(); S.seenTs = Date.now(); persist(); }
+  updateFeedDot();
   window.scrollTo({top:0});
 }
 function renderAll(){
-  renderResults(); renderList(); renderDiary(); renderStats();
+  renderResults(); renderList(); renderDiary(); renderStats(); renderFeed(); updateFeedDot();
   if(S.spotOpen) renderSpot();
 }
 
@@ -1607,6 +1758,15 @@ document.addEventListener('click', function(e){
     case 'needphone': toast(S.claudeEnv ? '📞 Numero non in archivio: tocca ✨ Completa con AI per cercarlo' : '📞 Numero non in archivio: aggiungilo con ✏️ Modifica'); break;
     case 'export': exportData(); break;
     case 'import': qs('#impfile').click(); break;
+    case 'open-name': qs('#nm-name').value = myName(); openModal('m-name'); break;
+    case 'save-name': {
+      const v = qs('#nm-name').value.trim();
+      if(!v){ toast('Scrivi il tuo nome 👤'); break; }
+      S.profile.name = v;
+      persist(); closeModals(); renderAll();
+      toast('👤 Ciao ' + v + '!');
+      break;
+    }
     case 'close-modals': closeModals(); break;
   }
 });
@@ -1637,6 +1797,7 @@ document.addEventListener('error', function(e){
   await loadData();
   renderAll();
   updateBoard();
+  if(!myName()) openModal('m-name');
   syncNow();
   addEventListener('online', scheduleSync);
   document.addEventListener('visibilitychange', function(){ if(!document.hidden) scheduleSync(); });
