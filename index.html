@@ -15,7 +15,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-<title>Stasera Dove? · V3</title>
+<title>Stasera Dove? · V4</title>
 <style>
 :root{
   --bg:#0f172a;            /* slate profondo */
@@ -323,7 +323,7 @@ footer{color:#475569;font-size:10.5px;text-align:center;padding:18px 0 8px;lette
 <canvas id="bg" aria-hidden="true"></canvas>
 
 <header>
-  <div class="stamp">BUILD V3</div>
+  <div class="stamp">BUILD V4</div>
   <div class="brand">Stasera <em>Dove?</em><small>TACCUINO DEI RISTORANTI</small></div>
   <div class="board-line" id="boardline">Il menu di stasera si scrive qui…</div>
 </header>
@@ -418,7 +418,7 @@ footer{color:#475569;font-size:10.5px;text-align:center;padding:18px 0 8px;lette
 
 </main>
 
-<footer>STASERA DOVE? · BUILD V3 · DATI SALVATI SU QUESTO DISPOSITIVO</footer>
+<footer>STASERA DOVE? · BUILD V4 · DATI SALVATI SU QUESTO DISPOSITIVO</footer>
 
 <nav>
   <button class="on" data-nav="v-wizard"><b>🍽️</b>Stasera</button>
@@ -526,12 +526,16 @@ footer{color:#475569;font-size:10.5px;text-align:center;padding:18px 0 8px;lette
 <script>
 'use strict';
 /* ============================================================
-   Stasera Dove? · V3 — dinner decider
+   Stasera Dove? · V4 — dinner decider
    Single-file, zero dipendenze. Persistenza: window.storage se
    dentro Claude, altrimenti localStorage. AI attiva solo in Claude.
    ============================================================ */
 
 const KEY = 'staseradove:data';
+/* Archivio condiviso (Firebase Firestore, REST — nessuna dipendenza).
+   Vuoto = sync spento, app solo-locale. L'apiKey web di Firebase è un
+   identificatore pubblico: la protezione sta nelle Security Rules. */
+const SYNC = Object.assign({ projectId:'', apiKey:'' }, window.SYNC_OVERRIDE || {});
 const TYPES = ['Pizzeria','Ristorante','Carne','Pesce','Brunch','Burger','Griglieria','Galletto','Cinese'];
 const GROUPS = {
   pizza:['Pizzeria'], risto:['Ristorante'], carne:['Carne','Griglieria','Galletto'],
@@ -739,7 +743,90 @@ function normalizeDb(){
     if(!Array.isArray(r.closed)) r.closed = [];
     if(!Array.isArray(r.ty)) r.ty = ['Ristorante'];
     if(!('photo' in r)) r.photo = null;
+    if(typeof r.updatedAt !== 'number') r.updatedAt = 0;
+    if(typeof r.deleted !== 'boolean') r.deleted = false;
   });
+}
+function activeDb(){ return S.db.filter(function(r){ return !r.deleted; }); }
+
+/* ---------- Archivio condiviso: sync Firestore via REST ---------- */
+function syncEnabled(){ return !!(SYNC.projectId && SYNC.apiKey); }
+function fsBase(){ return 'https://firestore.googleapis.com/v1/projects/' + SYNC.projectId + '/databases/(default)/documents'; }
+function toFsFields(r){
+  function sv(v){ return v==null ? {nullValue:null} : {stringValue:String(v)}; }
+  return {
+    n:sv(r.n), t:sv(r.t), z:sv(r.z),
+    ty:{arrayValue:{values:(r.ty||[]).map(function(x){ return {stringValue:x}; })}},
+    p:{integerValue:String(r.p||2)},
+    closed:{arrayValue:{values:(r.closed||[]).map(function(x){ return {integerValue:String(x)}; })}},
+    website:sv(r.website), phone:sv(r.phone), booking:sv(r.booking), blurb:sv(r.blurb),
+    photo:(r.photo && r.photo.length < 900000) ? sv(r.photo) : {nullValue:null},
+    updatedAt:{integerValue:String(r.updatedAt||0)},
+    deleted:{booleanValue:!!r.deleted}
+  };
+}
+function fromFsDoc(doc){
+  const f = doc.fields || {};
+  function gs(k){ const v=f[k]; return (v && 'stringValue' in v) ? v.stringValue : null; }
+  return {
+    id: doc.name.split('/').pop(),
+    n: gs('n')||'—', t: gs('t')||'—', z: gs('z')||'Altro',
+    ty: ((f.ty&&f.ty.arrayValue&&f.ty.arrayValue.values)||[]).map(function(v){ return v.stringValue; }).filter(Boolean),
+    p: parseInt((f.p&&f.p.integerValue)||'2',10)||2,
+    closed: ((f.closed&&f.closed.arrayValue&&f.closed.arrayValue.values)||[]).map(function(v){ return parseInt(v.integerValue,10); }).filter(function(n){ return !isNaN(n); }),
+    website: gs('website'), phone: gs('phone'), booking: gs('booking'), blurb: gs('blurb'), photo: gs('photo'),
+    updatedAt: parseInt((f.updatedAt&&f.updatedAt.integerValue)||'0',10)||0,
+    deleted: !!(f.deleted && f.deleted.booleanValue)
+  };
+}
+async function fsList(){
+  let out = [], token = null;
+  do{
+    const u = fsBase() + '/locali?pageSize=300&key=' + SYNC.apiKey + (token ? ('&pageToken=' + enc(token)) : '');
+    const res = await fetch(u);
+    if(!res.ok) throw new Error('fs ' + res.status);
+    const d = await res.json();
+    (d.documents||[]).forEach(function(doc){ out.push(fromFsDoc(doc)); });
+    token = d.nextPageToken || null;
+  }while(token);
+  return out;
+}
+async function fsPut(r){
+  const res = await fetch(fsBase() + '/locali/' + enc(r.id) + '?key=' + SYNC.apiKey, {
+    method:'PATCH', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({fields: toFsFields(r)})
+  });
+  if(!res.ok) throw new Error('fs put ' + res.status);
+}
+let syncBusy=false, syncQueued=false, syncAnnounced=false, syncTimer=null;
+async function syncNow(){
+  if(!syncEnabled()) return;
+  if(syncBusy){ syncQueued = true; return; }
+  syncBusy = true;
+  try{
+    const remote = await fsList();
+    const rmap = {}; remote.forEach(function(r){ rmap[r.id] = r; });
+    let changed = false; const toPush = [];
+    remote.forEach(function(rr){
+      const lr = S.db.find(function(x){ return x.id === rr.id; });
+      if(!lr){ S.db.push(rr); changed = true; }
+      else if((rr.updatedAt||0) > (lr.updatedAt||0)){ Object.assign(lr, rr); changed = true; }
+      else if((lr.updatedAt||0) > (rr.updatedAt||0)){ toPush.push(lr); }
+    });
+    S.db.forEach(function(lr){ if(!rmap[lr.id]) toPush.push(lr); });
+    for(let i=0; i<toPush.length; i++){ await fsPut(toPush[i]); }
+    if(changed){ normalizeDb(); await persist(); renderAll(); }
+    if(!syncAnnounced && (remote.length || toPush.length)){
+      syncAnnounced = true; toast('☁️ Archivio condiviso sincronizzato');
+    }
+  }catch(e){ /* offline o permessi: si ritenta al prossimo aggancio */ }
+  syncBusy = false;
+  if(syncQueued){ syncQueued = false; scheduleSync(); }
+}
+function scheduleSync(){
+  if(!syncEnabled()) return;
+  clearTimeout(syncTimer);
+  syncTimer = setTimeout(syncNow, 800);
 }
 async function loadData(){
   try{
@@ -806,7 +893,7 @@ function scoreRestaurant(r, a){
 }
 function runFind(){
   const scored = [];
-  S.db.forEach(function(r){
+  activeDb().forEach(function(r){
     const x = scoreRestaurant(r, S.ans);
     if(x) scored.push(x);
   });
@@ -1008,7 +1095,7 @@ function renderResults(){
 function renderList(){
   const qEl = qs('#q'); if(!qEl) return;
   const q = (qEl.value || '').toLowerCase().trim();
-  const list = S.db.filter(function(r){
+  const list = activeDb().filter(function(r){
     if(!q) return true;
     return (r.n + ' ' + r.t + ' ' + r.z + ' ' + r.ty.join(' ')).toLowerCase().indexOf(q) > -1;
   });
@@ -1251,21 +1338,22 @@ function saveEdit(){
     phone: qs('#ed-phone').value.trim() || null,
     booking: qs('#ed-book').value.trim() || null
   };
+  data.updatedAt = Date.now();
   if(S.editingId){
     const r = S.db.find(function(x){ return x.id===S.editingId; });
     Object.assign(r, data);
   } else {
-    S.db.push(Object.assign({id:'u'+Date.now(), blurb:null}, data));
+    S.db.push(Object.assign({id:'u'+Date.now(), blurb:null, deleted:false}, data));
   }
-  persist(); closeModals(); renderAll(); toast('💾 Locale salvato');
+  persist(); scheduleSync(); closeModals(); renderAll(); toast('💾 Locale salvato');
 }
 function delRest(){
   if(!S.editingId) return;
   const r = S.db.find(function(x){ return x.id===S.editingId; });
-  if(!confirm('Eliminare "' + r.n + '" dall’archivio?')) return;
-  S.db = S.db.filter(function(x){ return x.id!==S.editingId; });
+  if(!confirm('Eliminare "' + r.n + '" dall’archivio' + (syncEnabled() ? ' (per tutti)' : '') + '?')) return;
+  r.deleted = true; r.updatedAt = Date.now();   // tombstone: così la cancellazione si propaga e non "risorge"
   closeSpot();
-  persist(); closeModals(); renderAll(); toast('🗑️ Eliminato');
+  persist(); scheduleSync(); closeModals(); renderAll(); toast('🗑️ Eliminato');
 }
 
 /* ---------- AI: Anthropic API (solo dentro Claude) ---------- */
@@ -1313,7 +1401,8 @@ async function enrich(rid, btn){
     if(out.booking) r.booking = out.booking;
     if(out.price>=1 && out.price<=4) r.p = out.price;
     if(out.blurb) r.blurb = out.blurb;
-    await persist(); renderAll();
+    r.updatedAt = Date.now();
+    await persist(); scheduleSync(); renderAll();
     toast('✨ Scheda di ' + r.n + ' aggiornata — verifica i dati prima di chiamare');
   }catch(e){
     toast('⚠️ Ricerca AI non riuscita: riprova (serve login Claude)');
@@ -1326,12 +1415,12 @@ async function discover(btn){
   const old = btn.textContent;
   btn.disabled = true; btn.innerHTML = '<span class="spin">⏳</span> l’AI sta cercando sul web…';
   try{
-    const liked = S.db.map(function(r){
+    const liked = activeDb().map(function(r){
         const ri = ratingInfo(r.id);
         return ri ? {n:r.n, ty:r.ty.join('/'), avg:ri.avg} : null;
       }).filter(Boolean).sort(function(a,b){ return b.avg-a.avg; }).slice(0,6)
       .map(function(x){ return x.n + ' (' + x.ty + ', ' + x.avg.toFixed(1) + '/5)'; }).join('; ');
-    const names = S.db.map(function(r){ return r.n; }).join(', ');
+    const names = activeDb().map(function(r){ return r.n; }).join(', ');
     const tl = {any:'qualsiasi',surprise:'qualsiasi',pizza:'pizzeria',risto:'ristorante',carne:'carne/griglieria',pesce:'pesce',brunch:'brunch',burger:'burger',etnico:'cucina etnica/cinese'};
     const prompt = 'Aiuti due amici (base: zona Bergamo/Brianza, Lombardia) a scoprire ristoranti NUOVI e reali, attualmente aperti. ' +
       'Locali che hanno amato finora: ' + (liked || 'nessuna recensione ancora, gusti da esplorare') + '. ' +
@@ -1365,9 +1454,10 @@ function addDiscovered(idx){
     z: S.ans.zone!=='any' ? S.ans.zone : 'Bergamo provincia',
     ty: validTy.length ? validTy : ['Ristorante'],
     p: Math.min(4, Math.max(1, d.price||2)), closed:[], photo:null,
-    website:d.website||null, phone:d.phone||null, booking:null, blurb:d.why||null
+    website:d.website||null, phone:d.phone||null, booking:null, blurb:d.why||null,
+    updatedAt: Date.now(), deleted:false
   });
-  persist(); renderAll();
+  persist(); scheduleSync(); renderAll();
   toast('➕ ' + (d.name||'Locale') + ' aggiunto: controlla la zona con ✏️');
 }
 
@@ -1389,8 +1479,10 @@ function importData(file){
       if(!confirm('Sostituire archivio e diario con il backup (' + d.db.length + ' locali)?')) return;
       S.db = d.db; S.rev = d.rev || [];
       normalizeDb();
+      const now = Date.now();
+      S.db.forEach(function(r){ r.updatedAt = now; });   // l'import esplicito vince sul condiviso
       S.results = []; S.searched = false; closeSpot();
-      persist(); renderAll(); toast('⬆️ Backup importato');
+      persist(); scheduleSync(); renderAll(); toast('⬆️ Backup importato');
     }catch(e){ toast('⚠️ File non valido'); }
   };
   rd.readAsText(file);
@@ -1534,6 +1626,9 @@ document.addEventListener('error', function(e){
   await loadData();
   renderAll();
   updateBoard();
+  syncNow();
+  addEventListener('online', scheduleSync);
+  document.addEventListener('visibilitychange', function(){ if(!document.hidden) scheduleSync(); });
   if('serviceWorker' in navigator && location.protocol.indexOf('http')===0){
     try{ navigator.serviceWorker.register('sw.js'); }catch(e){}
   }
