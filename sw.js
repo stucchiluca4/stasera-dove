@@ -1,7 +1,7 @@
 /* Stasera Dove? · service worker — network-first, cache fallback (offline).
    Network-first garantisce che gli aggiornamenti arrivino sempre quando c'è rete;
    offline serve l'ultima versione salvata in cache. */
-const CACHE = 'staseradove-v7';
+const CACHE = 'staseradove-v8';
 const ASSETS = [
   './', './index.html', './manifest.webmanifest',
   './icon-192.png', './icon-512.png', './apple-touch-icon.png'
@@ -32,6 +32,29 @@ self.addEventListener('fetch', function(e){
       return res;
     }).catch(function(){
       return caches.match(req).then(function(r){ return r || caches.match('./index.html'); });
+    })
+  );
+});
+
+/* ---------- Notifiche push ---------- */
+self.addEventListener('push', function(e){
+  var data = {};
+  try{ data = e.data ? e.data.json() : {}; }catch(err){}
+  var title = data.title || 'Stasera Dove?';
+  var opts = {
+    body: data.body || 'Novità nel gruppo',
+    icon: 'icon-192.png',
+    badge: 'icon-192.png',
+    data: { url: './' }
+  };
+  e.waitUntil(self.registration.showNotification(title, opts));
+});
+self.addEventListener('notificationclick', function(e){
+  e.notification.close();
+  e.waitUntil(
+    clients.matchAll({type:'window', includeUncontrolled:true}).then(function(list){
+      for(var i=0;i<list.length;i++){ if('focus' in list[i]) return list[i].focus(); }
+      return clients.openWindow('./');
     })
   );
 });

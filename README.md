@@ -1,4 +1,4 @@
-# 🍽️ Stasera Dove? — V3
+# 🍽️ Stasera Dove? — V6
 
 App per decidere dove andare a cena, pensata per due. I vostri locali già caricati,
 consiglio con punteggio, diario delle cene con foto, classifica annuale e filtro
@@ -82,3 +82,12 @@ connessione** vedi subito la versione nuova.
 - 📸 **Foto nel diario** — foto del piatto nelle recensioni (compressa in automatico)
 - 💾 **Dati sul dispositivo** — salvataggio reale via browser, niente più "sola memoria"
 - 🐛 Vari fix (niente doppioni tra i "da recensire", conteggi corretti, ecc.)
+
+---
+
+## 🆕 Novità della V6
+
+- 🗑️ **Recensioni eliminabili** — ognuno può modificare/eliminare solo le proprie (anche le voci "da recensire")
+- 🔥 **Classifica attività** — punti: recensione 10 · locale aggiunto 5 · foto +2; **premio di fine anno: chi è primo il 31/12 vince una cena pagata dal gruppo**
+- 🔔 **Notifiche push** — avviso sul telefono quando qualcuno aggiunge un locale o una recensione (attivabili da 🔔 Novità, app installata in Home; controllo ogni ~10 minuti via GitHub Actions + Web Push)
+- ✨ Rifinitura grafica: avatar dei membri, contrasti, focus visibili, micro-animazioni
