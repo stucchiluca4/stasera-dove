@@ -33,9 +33,8 @@ vengono esclusi del tutto.
 
 Le istruzioni passo-passo sono nel file **`README.md`** del repository. In breve:
 
-1. **Online (una volta):** su GitHub → Settings → **Pages** → *Deploy from a branch*
-   → branch `claude/new-session-fyvycs`, cartella `/ (root)` → **Save**. Dopo ~1 minuto
-   ottieni un link tipo `https://stucchiluca4.github.io/claude-test/`.
+1. **Online (una volta):** su GitHub → Settings → **Pages** → Source: **GitHub Actions**.
+   Dopo ~1 minuto il sito è su `https://stucchiluca4.github.io/stasera-dove/`.
    *(Il repository deve essere pubblico con il piano gratuito.)*
 2. **Icona su iPhone:** apri il link in **Safari** → **Condividi** ↑ → **Aggiungi a
    Home** → **Aggiungi**. Fatelo su entrambi i telefoni.

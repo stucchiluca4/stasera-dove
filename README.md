@@ -30,14 +30,13 @@ Usiamo **GitHub Pages**: gratis, già incluso nel tuo account GitHub.
 > ⚠️ Il repository deve essere **pubblico** (con il piano gratuito). Se è privato:
 > Settings → in fondo "Change repository visibility" → Public. Oppure serve GitHub Pro.
 
-1. Vai sul repository su GitHub: **`stucchiluca4/claude-test`**
+1. Vai sul repository su GitHub: **`stucchiluca4/stasera-dove`**
 2. In alto clicca **Settings** (⚙️).
 3. Nel menu a sinistra clicca **Pages**.
-4. Sotto **"Build and deployment" → Source**, scegli **"Deploy from a branch"**.
-5. In **Branch** seleziona **`claude/new-session-fyvycs`** e cartella **`/ (root)`**, poi **Save**.
-6. Aspetta ~1 minuto e ricarica la pagina: comparirà in alto il link, tipo:
+4. Sotto **"Build and deployment" → Source**, scegli **"GitHub Actions"**.
+5. Aspetta ~1 minuto e ricarica la pagina: comparirà in alto il link:
 
-   **`https://stucchiluca4.github.io/claude-test/`**
+   **`https://stucchiluca4.github.io/stasera-dove/`**
 
 Quello è il link della tua app. 🎉
 
