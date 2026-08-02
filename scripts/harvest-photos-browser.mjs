@@ -110,7 +110,11 @@ for (const d of locali) {
   if (gb(d.f, 'deleted') || !sito || gs(d.f, 'photo') || gs(d.f, 'photoUrl')) { saltati++; continue; }
   const page = await ctx.newPage();
   try {
-    await page.goto(sito, { waitUntil: 'domcontentloaded', timeout: 25000 });
+    let caricata = false;
+    for (let tent = 0; tent < 2 && !caricata; tent++) {
+      try { await page.goto(sito, { waitUntil: 'domcontentloaded', timeout: 40000 }); caricata = true; }
+      catch (e) { if (tent === 1) throw e; }
+    }
     await page.waitForTimeout(3500);
     for (const sel of CONSENT) {
       try {
