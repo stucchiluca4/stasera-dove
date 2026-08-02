@@ -1,0 +1,26 @@
+name: Raccogli foto dai siti
+
+on:
+  schedule:
+    - cron: '0 5 1 * *'   # una volta al mese, per i locali nuovi
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: harvest-photos
+  cancel-in-progress: false
+
+jobs:
+  harvest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Estrai og:image e salva photoUrl
+        run: node scripts/harvest-photos.mjs
