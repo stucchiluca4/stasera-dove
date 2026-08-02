@@ -322,6 +322,11 @@ nav button.dot b::after{content:"";position:absolute;top:-2px;right:-9px;width:8
 .empty{color:var(--mut);text-align:center;padding:34px 20px;font-size:14px}
 .empty b{font-size:16px;font-weight:800;display:block;margin-bottom:7px;color:var(--txt)}
 footer{color:#475569;font-size:10.5px;text-align:center;padding:18px 0 8px;letter-spacing:1px}
+/* ---------- Copertine locali ---------- */
+.cardcover{position:relative;height:62px;border-radius:12px;overflow:hidden;margin-bottom:11px;opacity:.92}
+.cardcover .cemo,.herocover .cemo{position:absolute;opacity:.5;text-shadow:0 3px 10px rgba(0,0,0,.3);pointer-events:none;line-height:1}
+.cardcover-img{width:100%;height:96px;object-fit:cover;border-radius:12px;margin-bottom:11px;display:block}
+.herocover{position:absolute;inset:0}
 /* ---------- Rifinitura V6 ---------- */
 .card,.qcard,.rev,.feedrow,.stat,.actrow{box-shadow:0 10px 30px -18px rgba(2,6,17,.95), inset 0 1px 0 rgba(255,255,255,.05)}
 .chip:focus-visible,.btn:focus-visible,.ab:focus-visible,.ab2:focus-visible,.snav:focus-visible,.iconbtn:focus-visible{outline:2px solid rgba(34,211,238,.7);outline-offset:2px}
@@ -702,6 +707,42 @@ function logoHTML(name, website){
   const d = siteDomain(website);
   const img = d ? '<img class="logo" alt="" loading="lazy" src="https://icons.duckduckgo.com/ip3/' + esc(d) + '.ico">' : '';
   return '<span class="logo-wrap">' + mono + img + '</span>';
+}
+
+/* ---------- Copertine generate per i locali ----------
+   Niente foto rubacchiate da Google/TripAdvisor (copyright): ogni locale
+   ha una copertina illustrata deterministica a tema cucina. Le foto vere
+   (caricate con ✏️ o dal diario) hanno sempre la precedenza. */
+const CUISINE_ART = {
+  Pizzeria:  {e:'🍕', a:'#7c2d12', b:'#ea580c'},
+  Ristorante:{e:'🍝', a:'#312e81', b:'#6366f1'},
+  Carne:     {e:'🥩', a:'#7f1d1d', b:'#ef4444'},
+  Griglieria:{e:'🔥', a:'#7f1d1d', b:'#f97316'},
+  Pesce:     {e:'🐟', a:'#0c4a6e', b:'#0ea5e9'},
+  Brunch:    {e:'🥐', a:'#78350f', b:'#f59e0b'},
+  Burger:    {e:'🍔', a:'#713f12', b:'#eab308'},
+  Galletto:  {e:'🍗', a:'#7c2d12', b:'#fb923c'},
+  Cinese:    {e:'🥢', a:'#831843', b:'#ec4899'}
+};
+function coverArt(r){
+  // privilegia la tipologia più caratteristica (Ristorante è il generico)
+  const t = ((r.ty||[]).find(function(x){ return x !== 'Ristorante'; })) || (r.ty && r.ty[0]) || 'Ristorante';
+  const c = CUISINE_ART[t] || CUISINE_ART.Ristorante;
+  let h = 0; const n = String(r.n||'');
+  for(let i=0;i<n.length;i++){ h = (h*31 + n.charCodeAt(i)) >>> 0; }
+  return {e:c.e, css:'linear-gradient(' + (115 + h%130) + 'deg,' + c.a + ' 0%,' + c.b + ' 130%)', h:h};
+}
+function coverHTML(r, cls){
+  const a = coverArt(r);
+  let deco = '';
+  for(let i=0;i<5;i++){
+    const left = ((a.h >> (i*3)) % 88) + 3;
+    const top  = ((a.h >> (i*2+1)) % 62) + 6;
+    const rot  = ((a.h >> i) % 56) - 28;
+    const sz   = i===0 ? 44 : 17 + ((a.h >> (i*4)) % 16);
+    deco += '<span class="cemo" style="left:' + left + '%;top:' + top + '%;transform:rotate(' + rot + 'deg);font-size:' + sz + 'px">' + a.e + '</span>';
+  }
+  return '<div class="' + cls + '" style="background:' + a.css + '">' + deco + '</div>';
 }
 
 /* ---------- Sfondo 3D interattivo (canvas nativo, 60fps) ----------
@@ -1089,8 +1130,7 @@ function renderSpot(){
   const isPick = !!(S.surprisePick && S.surprisePick.r.id === r.id);
   const hero =
     '<div class="hero"' + (photo ? ' data-act="zoom-hero" style="cursor:zoom-in"' : '') + '>' +
-      (photo ? '<img src="' + esc(photo) + '" alt="">'
-             : '<div class="hmono" style="background:linear-gradient(135deg,' + monoColor(r.n) + ' 0%, #0b1120 90%)">' + esc(initials(r.n)) + '</div>') +
+      (photo ? '<img src="' + esc(photo) + '" alt="">' : coverHTML(r, 'herocover')) +
       '<div class="shade"></div>' +
       '<div class="hpr">' + '€'.repeat(r.p||2) + '</div>' +
       (isPick ? '<div class="hdice">🎲 IL DESTINO</div>' : '') +
@@ -1167,9 +1207,14 @@ function cardHTML(r, opts){
     ? '<button class="ab2" data-act="enrich" data-id="' + r.id + '">✨ Completa con AI</button>'
     : '';
   const headAttr = (opts.idx != null) ? ' data-act="open-spot" data-idx="' + opts.idx + '"' : '';
+  const cph = heroPhotoFor(r);
+  const cover = cph
+    ? '<img class="cardcover-img" src="' + esc(cph) + '" alt="" loading="lazy">'
+    : coverHTML(r, 'cardcover');
   return '' +
   '<div class="card' + (opts.pick ? ' pick' : '') + '">' +
     (opts.pick ? '<div class="pick-tag">🎲 Il destino ha deciso</div>' : '') +
+    cover +
     '<div class="chd"' + headAttr + '><div class="namewrap">' + logoHTML(r.n, r.website) + '<div><h3>' + esc(r.n) + '</h3>' +
     '<div class="sub">📍 ' + esc(r.t) + ' · ' + esc(r.z) + '</div></div></div>' +
     '<div class="pr">' + '€'.repeat(r.p||2) + '</div></div>' +
