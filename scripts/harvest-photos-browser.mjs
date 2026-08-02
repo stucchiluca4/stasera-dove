@@ -130,11 +130,14 @@ for (const d of locali) {
         }
         return false;
       });
-      if (coperta) { console.log(`— ${nome}: banner cookie non rimovibile, niente screenshot`); niente++; }
+      const spazzatura = await page.evaluate(() =>
+        /attendi che la tua richiesta|checking the site connection|sito web scaduto|suspected phishing|access denied|are you a robot/i.test(document.body?.innerText || ''));
+      if (coperta || spazzatura) { console.log(`— ${nome}: pagina non genuina (banner/anti-bot/scaduto), niente screenshot`); niente++; }
       else {
         const buf = await page.screenshot({ type: 'jpeg', quality: 68, clip: { x: 0, y: 0, width: 1200, height: 675 } });
         const dataUrl = 'data:image/jpeg;base64,' + buf.toString('base64');
-        if (dataUrl.length < 900000) {
+        if (buf.length < 25000) { console.log(`— ${nome}: screenshot quasi vuoto, scartato`); niente++; }
+        else if (dataUrl.length < 900000) {
           await patchDoc(d.id, { photo: { stringValue: dataUrl }, updatedAt: { integerValue: String(Date.now()) } });
           console.log(`✓ ${nome} (screenshot ${Math.round(buf.length / 1024)}KB)`);
           viaShot++;
