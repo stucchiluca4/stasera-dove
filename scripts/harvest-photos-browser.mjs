@@ -62,6 +62,46 @@ const ctx = await browser.newContext({
   locale: 'it-IT'
 });
 
+const APP_ORIGIN = 'https://stucchiluca4.github.io';
+const UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1';
+
+/* Fase 0 — verifica delle photoUrl esistenti come le vedrebbe un telefono
+   (con Referer/Origin dell'app): le bloccate dall'hotlink-protection ma
+   scaricabili vengono incorporate come dataURL; le morte vengono ripulite
+   e il locale torna alla copertina illustrata. */
+async function fetchImage(u, withRef) {
+  const headers = { 'User-Agent': UA, 'Accept': 'image/*,*/*;q=0.8' };
+  if (withRef) { headers['Referer'] = APP_ORIGIN + '/stasera-dove/'; headers['Origin'] = APP_ORIGIN; }
+  try {
+    const res = await fetch(u, { redirect: 'follow', headers });
+    if (!res.ok) return null;
+    const ct = (res.headers.get('content-type') || '').toLowerCase();
+    if (!ct.startsWith('image/') || ct.includes('svg')) return null;
+    const buf = Buffer.from(await res.arrayBuffer());
+    return buf.length > 1000 ? { buf, ct: ct.split(';')[0] } : null;
+  } catch { return null; }
+}
+const locali0 = await listLocali();
+let urlOk = 0, incorporate = 0, ripulite = 0;
+for (const d of locali0) {
+  const purl = gs(d.f, 'photoUrl');
+  if (!purl || gb(d.f, 'deleted') || gs(d.f, 'photo')) continue;
+  const nome = gs(d.f, 'n') ?? d.id;
+  if (await fetchImage(purl, true)) { urlOk++; continue; }   // il telefono la vedrà
+  const libera = await fetchImage(purl, false);              // bloccata solo con referer?
+  if (libera && libera.buf.length <= 600000) {
+    const dataUrl = `data:${libera.ct};base64,` + libera.buf.toString('base64');
+    await patchDoc(d.id, { photo: { stringValue: dataUrl }, photoUrl: { nullValue: null }, updatedAt: { integerValue: String(Date.now()) } });
+    console.log(`⇩ ${nome}: hotlink bloccato, foto incorporata (${Math.round(libera.buf.length / 1024)}KB)`);
+    incorporate++;
+  } else {
+    await patchDoc(d.id, { photoUrl: { nullValue: null }, updatedAt: { integerValue: String(Date.now()) } });
+    console.log(`✂ ${nome}: photoUrl irraggiungibile${libera ? ' (troppo pesante)' : ''}, torna la copertina`);
+    ripulite++;
+  }
+}
+console.log(`Verifica photoUrl: ${urlOk} ok · ${incorporate} incorporate · ${ripulite} ripulite.\n`);
+
 const locali = await listLocali();
 let viaUrl = 0, viaShot = 0, niente = 0, saltati = 0;
 for (const d of locali) {
