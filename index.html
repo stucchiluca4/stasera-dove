@@ -408,6 +408,7 @@ footer{color:#475569;font-size:10.5px;text-align:center;padding:18px 0 8px;lette
         <div class="chip" data-v="Milano">Milano</div>
         <div class="chip" data-v="Como / Lecco / Adda">Como / Lecco / Adda</div>
         <div class="chip" data-v="Brescia &amp; Laghi">Brescia &amp; Laghi</div>
+        <div class="chip" data-v="Sardegna">🏖️ Sardegna</div>
       </div>
     </div>
 
@@ -534,7 +535,7 @@ footer{color:#475569;font-size:10.5px;text-align:center;padding:18px 0 8px;lette
         <select id="ed-zone">
           <option>Bergamo città</option><option>Bergamo provincia</option>
           <option>Monza &amp; Brianza</option><option>Milano</option>
-          <option>Como / Lecco / Adda</option><option>Brescia &amp; Laghi</option><option>Altro</option>
+          <option>Como / Lecco / Adda</option><option>Brescia &amp; Laghi</option><option>Sardegna</option><option>Altro</option>
         </select>
       </div>
     </div>
@@ -602,10 +603,10 @@ const SYNC = Object.assign({ projectId:'stasera-dove', apiKey:'AIzaSyB-m2ee3o0HV
 /* Notifiche push (Web Push VAPID): la chiave pubblica identifica il mittente;
    l'invio avviene dal robot GitHub Actions con la chiave privata segreta. */
 const PUSH = { publicKey: 'BMdBwSfv_nCRC2ESLVmExIhjKXmMWfsyU60dmtKe02lczG2mzvY1OYR8HkGsi6KSm57sVeI0AIlKHVY1YrBg68Y' };
-const TYPES = ['Pizzeria','Ristorante','Carne','Pesce','Brunch','Burger','Griglieria','Galletto','Cinese'];
+const TYPES = ['Pizzeria','Ristorante','Carne','Pesce','Brunch','Burger','Griglieria','Galletto','Cinese','Giapponese'];
 const GROUPS = {
   pizza:['Pizzeria'], risto:['Ristorante'], carne:['Carne','Griglieria','Galletto'],
-  pesce:['Pesce'], brunch:['Brunch'], burger:['Burger'], etnico:['Cinese']
+  pesce:['Pesce'], brunch:['Brunch'], burger:['Burger'], etnico:['Cinese','Giapponese']
 };
 const BUDGET_LABEL = {0:'indifferente',1:'€ fino a 20',2:'€€ 20–40',3:'€€€ 40–70',4:'€€€€ oltre 70'};
 const DAYS = [{v:1,l:'Lun'},{v:2,l:'Mar'},{v:3,l:'Mer'},{v:4,l:'Gio'},{v:5,l:'Ven'},{v:6,l:'Sab'},{v:0,l:'Dom'}];
@@ -730,7 +731,8 @@ const CUISINE_ART = {
   Brunch:    {e:'🥐', a:'#78350f', b:'#f59e0b'},
   Burger:    {e:'🍔', a:'#713f12', b:'#eab308'},
   Galletto:  {e:'🍗', a:'#7c2d12', b:'#fb923c'},
-  Cinese:    {e:'🥢', a:'#831843', b:'#ec4899'}
+  Cinese:    {e:'🥢', a:'#831843', b:'#ec4899'},
+  Giapponese:{e:'🍣', a:'#134e4a', b:'#14b8a6'}
 };
 function coverArt(r){
   // privilegia la tipologia più caratteristica (Ristorante è il generico)
@@ -1057,7 +1059,8 @@ function scoreRestaurant(r, a){
     else { s -= 6; why.push('fuori budget'); }
   } else { s += 10; }
   if(a.zone !== 'any'){
-    if(r.z === a.zone){ s += 22; why.push('nella zona giusta'); }
+    if(r.z !== a.zone) return null;   // zona scelta = solo quella zona
+    s += 22; why.push('nella zona giusta');
   } else { s += 10; }
   const ri = ratingInfo(r.id);
   if(ri){ s += ri.avg * 6; if(ri.avg >= 4) why.push('vi era piaciuto molto'); }
