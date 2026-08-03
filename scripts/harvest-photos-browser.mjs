@@ -131,7 +131,8 @@ for (const d of locali) {
       return m?.content || null;
     });
     if (cand) { try { cand = new URL(cand, page.url()).href.replace(/^http:/, 'https:'); } catch { cand = null; } }
-    if (cand && !(await urlIsImage(cand, 1))) cand = null;
+    if (cand && /logo|icon|favicon|sprite|placeholder|badge/i.test(cand)) cand = null; // og:image che è solo un logo
+    if (cand && !(await urlIsImage(cand, 25000))) cand = null;
 
     // 2) immagine più grande effettivamente caricata
     if (!cand) {
