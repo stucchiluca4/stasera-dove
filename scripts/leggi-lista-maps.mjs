@@ -27,16 +27,17 @@ for (const sel of ['button:has-text("Accetta tutto")', 'button:has-text("Accept 
 console.log('URL finale:', page.url());
 console.log('Titolo:', await page.title());
 
-// scorri il pannello-lista per caricare tutte le voci (lazy load)
-for (let i = 0; i < 12; i++) {
-  const mosso = await page.evaluate(() => {
+// scorri il pannello-lista finché il numero di voci smette di crescere
+let stabile = 0, prima = 0;
+for (let i = 0; i < 40 && stabile < 5; i++) {
+  await page.evaluate(() => {
     const feed = document.querySelector('[role="feed"]') ||
       [...document.querySelectorAll('div')].find(d => d.scrollHeight > d.clientHeight + 200 && d.clientHeight > 300);
-    if (feed) { feed.scrollBy(0, 1200); return true; }
-    window.scrollBy(0, 1200); return false;
+    if (feed) feed.scrollBy(0, 1600); else window.scrollBy(0, 1600);
   });
-  await page.waitForTimeout(1200);
-  if (!mosso && i > 4) break;
+  await page.waitForTimeout(1300);
+  const ora = (await page.evaluate(() => document.body.innerText || '')).length;
+  if (ora <= prima) stabile++; else { stabile = 0; prima = ora; }
 }
 
 const testo = await page.evaluate(() => document.body.innerText || '');
