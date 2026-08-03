@@ -1,0 +1,31 @@
+name: Leggi lista Maps
+
+on:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: 'Link della lista Google Maps condivisa'
+        required: true
+        type: string
+
+permissions: {}
+
+jobs:
+  leggi:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install Playwright
+        run: |
+          npm install --no-save playwright@1.49.1
+          npx playwright install --with-deps chromium
+      - name: Leggi la lista
+        run: node scripts/leggi-lista-maps.mjs
+        env:
+          LISTA_URL: ${{ inputs.url }}
