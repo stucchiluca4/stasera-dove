@@ -9,6 +9,12 @@
 <meta name="apple-mobile-web-app-title" content="Stasera Dove?">
 <meta name="theme-color" content="#1c2140">
 <meta name="description" content="App per decidere dove andare a cena: archivio locali, consigli su misura, diario con foto e classifiche.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Stasera Dove?">
+<meta property="og:description" content="L'app del gruppo per decidere dove andare a cena: consiglio su misura, diario con foto e classifica dell'anno.">
+<meta property="og:url" content="https://stucchiluca4.github.io/stasera-dove/">
+<meta property="og:image" content="https://stucchiluca4.github.io/stasera-dove/icon-512.png">
+<meta name="twitter:card" content="summary">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="icon-192.png">
@@ -50,6 +56,7 @@ body{
   background:var(--cielo-a);color:var(--crema);
   padding-bottom:calc(86px + env(safe-area-inset-bottom));
   min-height:100vh;
+  min-height:100dvh; /* Safari iOS: niente salti quando la barra si ritira */
   transition:background 1.2s ease;
 }
 /* il cielo: gradiente del crepuscolo + bagliore d'orizzonte in basso */
@@ -198,7 +205,7 @@ h2 span{color:var(--aperol-s)}
 #spotwrap{position:relative;width:100%;max-width:430px}
 #spotcard{
   background:#242847;border:1px solid rgba(247,238,222,.13);border-radius:22px;
-  overflow:hidden;max-height:84vh;overflow-y:auto;will-change:transform;
+  overflow:hidden;max-height:84vh;max-height:84dvh;overflow-y:auto;will-change:transform;
   box-shadow:0 40px 90px -30px rgba(10,8,22,1), 0 0 60px -20px rgba(255,139,76,.4);
   transition:transform .18s ease-out;
 }
@@ -280,6 +287,7 @@ nav{
 }
 nav button{
   flex:1;background:none;border:none;color:#8b84ab;
+  display:flex;flex-direction:column;align-items:center; /* icona sempre sopra l'etichetta */
   font-size:10px;font-weight:700;letter-spacing:.5px;cursor:pointer;padding:6px 0;font-family:inherit;
   transition:color .25s;
 }
@@ -304,7 +312,7 @@ nav button.dot b::after{content:"";position:absolute;top:-2px;right:-9px;width:8
   position:fixed;left:0;right:0;bottom:0;z-index:100;display:none;
   background:#242847;border:1px solid var(--linea);border-bottom:none;border-radius:24px 24px 0 0;
   padding:18px 18px calc(20px + env(safe-area-inset-bottom));
-  max-height:90vh;overflow-y:auto;max-width:640px;margin:0 auto;
+  max-height:90vh;max-height:90dvh;overflow-y:auto;max-width:640px;margin:0 auto;
 }
 .modal.show{display:block;animation:sheetIn .38s cubic-bezier(.22,1.2,.36,1) both}
 @keyframes sheetIn{from{transform:translateY(46px);opacity:.4}to{transform:none;opacity:1}}
@@ -360,8 +368,22 @@ footer{color:#6e6890;font-size:10.5px;text-align:center;padding:18px 0 8px;lette
 .heroimg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 35%}
 /* ---------- Rifinitura ---------- */
 .card,.qcard,.rev,.feedrow,.stat,.actrow{box-shadow:0 12px 30px -20px rgba(10,8,22,.9), inset 0 1px 0 rgba(247,238,222,.05)}
-.chip:focus-visible,.btn:focus-visible,.ab:focus-visible,.ab2:focus-visible,.snav:focus-visible,.iconbtn:focus-visible{outline:2px solid rgba(255,160,107,.8);outline-offset:2px}
+.chip:focus-visible,.btn:focus-visible,.ab:focus-visible,.ab2:focus-visible,.snav:focus-visible,.iconbtn:focus-visible,
+.mclose:focus-visible,.spotx:focus-visible,.spot-all:focus-visible,.photobtn:focus-visible,.rm:focus-visible,
+.addph:focus-visible,nav button:focus-visible{outline:2px solid rgba(255,160,107,.8);outline-offset:2px}
+.searchbar input:focus-visible,.field input:focus-visible,.field textarea:focus-visible,.field select:focus-visible{
+  outline:none;border-color:rgba(255,160,107,.6);box-shadow:0 0 0 3px rgba(255,109,58,.16);
+}
 .stat .v,.apts{font-variant-numeric:tabular-nums}
+h2,.empty b{text-wrap:balance}
+.empty,.blurb,.ft{text-wrap:pretty}
+/* scala prezzo: le € mancanti restano visibili ma spente */
+.pr i,.hpr i{font-style:normal;opacity:.28}
+/* stelle spente di voti e recensioni: crema attenuata, non grigio freddo */
+.stars .off{color:rgba(247,238,222,.16)}
+/* ingresso scaglionato solo per i risultati della ricerca */
+#results .card{animation:cardIn .45s cubic-bezier(.22,1.1,.36,1) both}
+@keyframes cardIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
 #toast{animation:toastIn .3s cubic-bezier(.22,1.2,.36,1)}
 @keyframes toastIn{from{transform:translate(-50%,10px);opacity:0}to{transform:translate(-50%,0);opacity:1}}
 .favatar{width:34px;height:34px;border-radius:99px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:12.5px;letter-spacing:.5px;border:1px solid rgba(247,238,222,.18)}
@@ -371,7 +393,7 @@ footer{color:#6e6890;font-size:10.5px;text-align:center;padding:18px 0 8px;lette
 .prize{background:linear-gradient(135deg,rgba(255,199,107,.13),rgba(38,42,73,.85) 60%);border:1px solid rgba(255,199,107,.4);border-radius:16px;padding:13px 15px;margin:12px 0 6px;font-size:13px;line-height:1.5;color:#ffe3b3;box-shadow:0 0 26px -12px rgba(255,199,107,.45)}
 .ab2{min-height:40px}
 @media (prefers-reduced-motion: reduce){
-  #spotcard.in,.modal.show,.hero img{animation:none}
+  #spotcard.in,.modal.show,.hero img,#results .card{animation:none}
   .chip,.btn,.card,body,body::before{transition:none}
 }
 </style>
@@ -448,8 +470,8 @@ footer{color:#6e6890;font-size:10.5px;text-align:center;padding:18px 0 8px;lette
   <section id="v-list" hidden>
     <h2>Il vostro <span>archivio</span></h2>
     <div class="searchbar" style="margin-top:10px">
-      <input type="search" id="q" placeholder="Cerca per nome, paese, tipologia…">
-      <button class="iconbtn" data-act="add-new" title="Aggiungi locale">➕</button>
+      <input type="search" id="q" placeholder="Cerca per nome, paese, tipologia…" aria-label="Cerca nell'archivio">
+      <button class="iconbtn" data-act="add-new" title="Aggiungi locale" aria-label="Aggiungi locale">➕</button>
     </div>
     <div style="display:flex;gap:8px;margin-top:8px">
       <button class="ab2" data-act="export">⬇️ Backup</button>
@@ -511,7 +533,7 @@ footer{color:#6e6890;font-size:10.5px;text-align:center;padding:18px 0 8px;lette
 
 <div class="modal" id="m-review">
   <div class="modal-inner">
-    <button class="mclose" data-act="close-modals">✕</button>
+    <button class="mclose" data-act="close-modals" aria-label="Chiudi">✕</button>
     <h3 id="rv-title">Recensione</h3>
     <div class="msub" id="rv-sub"></div>
     <div class="field"><label>Chi c'era?</label>
@@ -535,7 +557,7 @@ footer{color:#6e6890;font-size:10.5px;text-align:center;padding:18px 0 8px;lette
       <input type="file" id="rv-photofile" accept="image/*" hidden>
       <div class="photo-prev" id="rv-photoprev" hidden>
         <img id="rv-photoimg" alt="foto">
-        <button type="button" class="rm" data-act="rmphoto">✕</button>
+        <button type="button" class="rm" data-act="rmphoto" aria-label="Rimuovi foto">✕</button>
       </div>
     </div>
     <div class="field"><label>Note</label><textarea id="rv-note" placeholder="Com'era? Cosa avete preso? Ci tornereste?"></textarea></div>
@@ -546,7 +568,7 @@ footer{color:#6e6890;font-size:10.5px;text-align:center;padding:18px 0 8px;lette
 
 <div class="modal" id="m-edit">
   <div class="modal-inner">
-    <button class="mclose" data-act="close-modals">✕</button>
+    <button class="mclose" data-act="close-modals" aria-label="Chiudi">✕</button>
     <h3 id="ed-title">Locale</h3>
     <div class="field"><label>Nome</label><input id="ed-name" placeholder="Nome del locale"></div>
     <div class="mrow">
@@ -572,7 +594,7 @@ footer{color:#6e6890;font-size:10.5px;text-align:center;padding:18px 0 8px;lette
       <input type="file" id="ed-photofile" accept="image/*" hidden>
       <div class="photo-prev" id="ed-photoprev" hidden>
         <img id="ed-photoimg" alt="foto">
-        <button type="button" class="rm" data-act="ed-rmphoto">✕</button>
+        <button type="button" class="rm" data-act="ed-rmphoto" aria-label="Rimuovi foto">✕</button>
       </div>
     </div>
     <div class="field"><label>Sito web</label><input id="ed-web" placeholder="https://…"></div>
@@ -587,7 +609,7 @@ footer{color:#6e6890;font-size:10.5px;text-align:center;padding:18px 0 8px;lette
 
 <div class="modal" id="m-discover">
   <div class="modal-inner">
-    <button class="mclose" data-act="close-modals">✕</button>
+    <button class="mclose" data-act="close-modals" aria-label="Chiudi">✕</button>
     <h3>🔮 Nuove scoperte</h3>
     <div class="msub">Posti veri trovati sul web in base ai vostri gusti e alle risposte di stasera.</div>
     <div id="disclist"></div>
@@ -596,7 +618,7 @@ footer{color:#6e6890;font-size:10.5px;text-align:center;padding:18px 0 8px;lette
 
 <div class="modal" id="m-name">
   <div class="modal-inner">
-    <button class="mclose" data-act="close-modals">✕</button>
+    <button class="mclose" data-act="close-modals" aria-label="Chiudi">✕</button>
     <h3>👤 Come ti chiami?</h3>
     <div class="msub">Il nome firma le tue recensioni e i locali che aggiungi: gli amici lo vedranno nella sezione 🔔 Novità.</div>
     <div class="field"><label>Il tuo nome</label><input id="nm-name" placeholder="es. Luca" maxlength="20"></div>
@@ -737,6 +759,11 @@ function logoHTML(name, website){
   const img = d ? '<img class="logo" alt="" loading="lazy" src="https://icons.duckduckgo.com/ip3/' + esc(d) + '.ico">' : '';
   return '<span class="logo-wrap">' + mono + img + '</span>';
 }
+/* Scala prezzo sempre leggibile: le € piene + le mancanti spente (max 4). */
+function priceHTML(p){
+  p = Math.min(4, Math.max(1, p||2));
+  return '€'.repeat(p) + (p<4 ? '<i>' + '€'.repeat(4-p) + '</i>' : '');
+}
 
 /* ---------- Copertine generate per i locali ----------
    Niente foto rubacchiate da Google/TripAdvisor (copyright): ogni locale
@@ -780,6 +807,7 @@ function coverHTML(r, cls){
    Nessuna animazione: il cielo e' una fotografia del momento in cui apri
    l'app per decidere dove cenare. */
 function startBg(){
+  const SKY_THEME = {'sky-giorno':'#2e3a66','sky-tramonto':'#232247','sky-blu':'#1c2140','sky-notte':'#131728'};
   function skyClass(){
     const h = new Date().getHours();
     if(h >= 23 || h < 6) return 'sky-notte';
@@ -788,8 +816,12 @@ function startBg(){
     return 'sky-giorno';
   }
   function apply(){
+    const cls = skyClass();
     document.body.classList.remove('sky-notte','sky-blu','sky-tramonto','sky-giorno');
-    document.body.classList.add(skyClass());
+    document.body.classList.add(cls);
+    // anche la barra del browser segue il cielo (Safari/Chrome PWA)
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if(meta) meta.setAttribute('content', SKY_THEME[cls]);
   }
   apply();
   setInterval(apply, 5*60*1000);
@@ -1133,7 +1165,7 @@ function renderSpot(){
       coverHTML(r, 'herocover') +
       (photo ? '<img class="heroimg" src="' + esc(photo) + '" alt="" loading="lazy">' : '') +
       '<div class="shade"></div>' +
-      '<div class="hpr">' + '€'.repeat(r.p||2) + '</div>' +
+      '<div class="hpr">' + priceHTML(r.p) + '</div>' +
       (!photo ? '<button class="addph" data-act="hero-addphoto" data-id="' + r.id + '">📷 Aggiungi foto</button>' : '') +
       (isPick ? '<div class="hdice">🎲 IL DESTINO</div>' : '') +
       '<div class="htit"><h3>' + esc(r.n) + '</h3><div class="sub">📍 ' + esc(r.t) + ' · ' + esc(r.z) + '</div></div>' +
@@ -1147,14 +1179,14 @@ function renderSpot(){
     '</div>';
   const foot =
     '<div class="spot-foot">' +
-      '<button class="snav" data-act="spot-prev"' + (S.spotIdx<=0?' disabled':'') + '>‹</button>' +
+      '<button class="snav" data-act="spot-prev" aria-label="Locale precedente"' + (S.spotIdx<=0?' disabled':'') + '>‹</button>' +
       '<div class="spot-count">' + (S.spotIdx+1) + ' di ' + S.results.length + '</div>' +
-      '<button class="snav" data-act="spot-next"' + (S.spotIdx>=S.results.length-1?' disabled':'') + '>›</button>' +
+      '<button class="snav" data-act="spot-next" aria-label="Locale successivo"' + (S.spotIdx>=S.results.length-1?' disabled':'') + '>›</button>' +
     '</div>' +
     (isPick ? '<div style="padding:0 16px 8px"><button class="btn ghost" style="margin-top:0" data-act="reroll">🎲 Rilancia il dado</button></div>' : '') +
     '<button class="spot-all" data-act="spot-close">Vedi la lista completa (' + S.results.length + ') ↓</button>';
   const card = qs('#spotcard');
-  card.innerHTML = '<button class="spotx" data-act="spot-close">✕</button>' + hero + body + foot;
+  card.innerHTML = '<button class="spotx" data-act="spot-close" aria-label="Chiudi">✕</button>' + hero + body + foot;
   card.classList.remove('in'); void card.offsetWidth; card.classList.add('in');
   card.scrollTop = 0;
 }
@@ -1218,7 +1250,7 @@ function cardHTML(r, opts){
     cover +
     '<div class="chd"' + headAttr + '><div class="namewrap">' + logoHTML(r.n, r.website) + '<div><h3>' + esc(r.n) + '</h3>' +
     '<div class="sub">📍 ' + esc(r.t) + ' · ' + esc(r.z) + '</div></div></div>' +
-    '<div class="pr">' + '€'.repeat(r.p||2) + '</div></div>' +
+    '<div class="pr">' + priceHTML(r.p) + '</div></div>' +
     '<div class="tags">' + r.ty.map(function(t){ return '<span class="tag">' + esc(t) + '</span>'; }).join('') + rateTag + closedTag + (r.addedBy ? '<span class="tag">➕ ' + esc(r.addedBy) + '</span>' : '') + '</div>' +
     (r.blurb ? '<p class="blurb">' + esc(r.blurb) + '</p>' : '') +
     (opts.why && opts.why.length ? '<div class="why">✔ ' + opts.why.map(esc).join(' · ') + '</div>' : '') +
@@ -1303,7 +1335,7 @@ function renderDiary(){
       const mine = !x.by || (me && x.by === me);   // le recensioni senza firma restano modificabili da questo telefono
       return '<div class="rev"><h4>' + esc(r ? r.n : 'Locale rimosso') + '</h4>' +
         '<div class="meta">' + (x.by ? '👤 ' + esc(x.by) + ' · ' : '') + esc(x.date) + ' · ' + esc(x.who) + (x.spend ? ' · ' + esc(x.spend) + ' €/pers.' : '') + '</div>' +
-        '<div class="stars">' + '★'.repeat(x.rating) + '<span style="color:#334155">' + '★'.repeat(5-x.rating) + '</span></div>' +
+        '<div class="stars">' + '★'.repeat(x.rating) + '<span class="off">' + '★'.repeat(5-x.rating) + '</span></div>' +
         (x.note ? '<p>' + esc(x.note) + '</p>' : '') +
         (x.photo ? '<img class="revphoto" src="' + esc(x.photo) + '" data-act="zoom" data-id="' + x.id + '" alt="foto">' : '') +
         (mine ? '<button class="ab2" style="margin-top:9px" data-act="pending-review" data-id="' + x.id + '">✏️ Modifica</button>' : '') +
@@ -1701,7 +1733,7 @@ async function discover(btn){
     qs('#disclist').innerHTML = S.disc.map(function(d,i){
       return '<div class="card"><div class="chd"><div class="namewrap">' + logoHTML(d.name, d.website) + '<div><h3>' + esc(d.name) + '</h3>' +
         '<div class="sub">📍 ' + esc(d.town) + '</div></div></div>' +
-        '<div class="pr">' + '€'.repeat(Math.min(4, Math.max(1, d.price||2))) + '</div></div>' +
+        '<div class="pr">' + priceHTML(d.price) + '</div></div>' +
         '<div class="tags">' + (d.types||[]).map(function(t){ return '<span class="tag">' + esc(t) + '</span>'; }).join('') + '</div>' +
         (d.why ? '<p class="blurb">' + esc(d.why) + '</p>' : '') +
         '<div class="acts2"><button class="ab2 go" data-act="add-ai" data-idx="' + i + '">➕ Aggiungi all’archivio</button>' +
