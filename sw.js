@@ -1,10 +1,15 @@
 /* Stasera Dove? · service worker — network-first, cache fallback (offline).
    Network-first garantisce che gli aggiornamenti arrivino sempre quando c'è rete;
    offline serve l'ultima versione salvata in cache. */
-const CACHE = 'staseradove-v14';
+const CACHE = 'staseradove-v15';
 const ASSETS = [
   './', './index.html', './manifest.webmanifest',
-  './icon-192.png', './icon-512.png', './apple-touch-icon.png'
+  './icon-192.png', './icon-512.png', './apple-touch-icon.png',
+  // V8: foto d'ambiente per tipologia — le copertine vivono anche offline
+  './img/fb-pizzeria.jpg', './img/fb-ristorante.jpg', './img/fb-carne.jpg',
+  './img/fb-griglieria.jpg', './img/fb-pesce.jpg', './img/fb-brunch.jpg',
+  './img/fb-burger.jpg', './img/fb-galletto.jpg', './img/fb-cinese.jpg',
+  './img/fb-giapponese.jpg'
 ];
 
 self.addEventListener('install', function(e){

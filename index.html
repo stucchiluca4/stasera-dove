@@ -396,12 +396,79 @@ h2,.empty b{text-wrap:balance}
   #spotcard.in,.modal.show,.hero img,#results .card{animation:none}
   .chip,.btn,.card,body,body::before{transition:none}
 }
+/* ========== V8 · LIQUID GLASS ==========
+   Il vetro vive sul "chrome" (nav, modali, riflettore, hero della tab): pochi
+   strati con backdrop-filter, fluidi anche su iPhone. Le card della lista sono
+   traslucide SENZA blur: 58 card sfocate = scatti, e il cielo respira comunque. */
+:root{--vetro:rgba(35,39,70,.58);--vetro-hi:rgba(45,49,85,.60);--vetro-bordo:rgba(247,238,222,.16)}
+#aurora{position:fixed;z-index:-1;left:-28%;top:-18%;width:88vw;height:88vw;border-radius:50%;pointer-events:none;
+  background:radial-gradient(circle at 50% 50%, rgba(255,139,76,.15), transparent 62%);
+  filter:blur(34px);animation:auroraDrift 48s ease-in-out infinite alternate;will-change:transform}
+@keyframes auroraDrift{from{transform:translate(0,0) scale(1)}50%{transform:translate(36vw,12vh) scale(1.28)}to{transform:translate(62vw,30vh) scale(.92)}}
+.board-line{backdrop-filter:saturate(160%) blur(12px);-webkit-backdrop-filter:saturate(160%) blur(12px)}
+nav{left:10px;right:10px;bottom:calc(10px + env(safe-area-inset-bottom));border-radius:24px;
+  border:1px solid var(--vetro-bordo);border-top:1px solid rgba(247,238,222,.2);background:rgba(24,26,50,.55);
+  backdrop-filter:saturate(180%) blur(22px);-webkit-backdrop-filter:saturate(180%) blur(22px);
+  padding:8px 4px 9px;max-width:620px;margin:0 auto;
+  box-shadow:0 18px 50px -20px rgba(8,6,20,.95), inset 0 1px 0 rgba(247,238,222,.10)}
+body{padding-bottom:calc(100px + env(safe-area-inset-bottom))}
+#toast{bottom:calc(116px + env(safe-area-inset-bottom))}
+.modal,#spotcard{background:var(--vetro-hi);backdrop-filter:saturate(180%) blur(26px);-webkit-backdrop-filter:saturate(180%) blur(26px)}
+.modal{box-shadow:0 -24px 70px -30px rgba(8,6,20,.9), inset 0 1px 0 rgba(247,238,222,.14)}
+#spotcard{box-shadow:0 40px 90px -30px rgba(10,8,22,1), 0 0 60px -20px rgba(255,139,76,.4), inset 0 1px 0 rgba(247,238,222,.14)}
+.card,.qcard,.rev,.stat,.feedrow,.actrow{background:rgba(38,42,73,.80);border-color:var(--vetro-bordo)}
+.covbox{height:132px}
+.covbox.has-photo{height:158px}
+.cardcover-img,.heroimg{object-position:center}
+.covbox .fbnote{position:absolute;right:9px;bottom:7px;font-size:8.5px;font-weight:800;letter-spacing:1px;color:rgba(247,238,222,.6);text-shadow:0 1px 6px rgba(0,0,0,.7);pointer-events:none}
+/* ---- wizard: una domanda alla volta ---- */
+#m-wiz h3{font-size:21px}
+.wdots{display:flex;gap:7px;justify-content:center;margin:4px 0 14px}
+.wdots i{width:8px;height:8px;border-radius:99px;background:rgba(247,238,222,.22);transition:width .3s,background .3s}
+.wdots i.on{width:22px;background:var(--aperol-s)}
+.wopts{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.wopt{display:flex;align-items:center;gap:11px;border:1px solid var(--linea);border-radius:15px;
+  background:rgba(247,238,222,.05);color:#efe8db;padding:13px 13px;font-size:14.5px;font-weight:600;cursor:pointer;
+  font-family:inherit;text-align:left;min-height:54px;
+  transition:transform .15s ease,border-color .2s,background .2s;animation:optIn .4s cubic-bezier(.22,1.15,.36,1) both}
+.wopt b{font-size:21px;font-weight:700;flex:0 0 auto;letter-spacing:-1px}
+.wopt:active{transform:scale(.94)}
+.wopt.on{background:var(--crema);border-color:var(--crema);color:#221b33;font-weight:800}
+.wopt.wide{grid-column:1 / -1}
+@keyframes optIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.wopts .wopt:nth-child(2){animation-delay:.03s}.wopts .wopt:nth-child(3){animation-delay:.06s}
+.wopts .wopt:nth-child(4){animation-delay:.09s}.wopts .wopt:nth-child(5){animation-delay:.12s}
+.wopts .wopt:nth-child(6){animation-delay:.15s}.wopts .wopt:nth-child(7){animation-delay:.18s}
+.wopts .wopt:nth-child(8){animation-delay:.21s}.wopts .wopt:nth-child(9){animation-delay:.24s}
+.wfoot{display:flex;align-items:center;gap:10px;margin-top:15px}
+.wback{border:1px solid var(--linea);background:rgba(247,238,222,.06);color:#e9e2d6;border-radius:12px;
+  padding:11px 16px;font-size:13.5px;font-weight:700;cursor:pointer;font-family:inherit;transition:transform .15s}
+.wback:active{transform:scale(.96)}
+.wskip{margin-left:auto;background:none;border:none;color:var(--aperol-s);font-size:13.5px;font-weight:700;cursor:pointer;font-family:inherit;padding:11px 6px}
+/* ---- hero della tab Stasera ---- */
+.wizhero{position:relative;overflow:hidden;background:var(--vetro);
+  backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);
+  border:1px solid var(--vetro-bordo);border-radius:24px;padding:20px 18px 18px;margin-top:12px;
+  box-shadow:0 24px 60px -30px rgba(8,6,20,.95), inset 0 1px 0 rgba(247,238,222,.14)}
+.wizhero .big{font-family:'Bricolage Grotesque','Inter',sans-serif;font-size:24px;font-weight:800;letter-spacing:-.4px;line-height:1.12}
+.wizhero .sub2{color:var(--sabbia);font-size:13px;margin-top:6px}
+.anspills{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.anspill{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--linea);border-radius:999px;
+  background:rgba(247,238,222,.06);color:#efe8db;padding:9px 13px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;
+  transition:transform .15s,border-color .2s,background .2s}
+.anspill:active{transform:scale(.95)}
+.anspill em{font-style:normal;color:var(--sabbia);font-weight:600}
+.anspill.tgl2.on{background:var(--menta);border-color:var(--menta);color:#0c2b1a}
+.anspill.tgl2.on em{color:#0c2b1a}
+.wopt:focus-visible,.wback:focus-visible,.wskip:focus-visible,.anspill:focus-visible{outline:2px solid rgba(255,160,107,.8);outline-offset:2px}
+@media (prefers-reduced-motion: reduce){#aurora,.wopt{animation:none}}
 </style>
 </head>
 <body>
+<div id="aurora" aria-hidden="true"></div>
 
 <header>
-  <div class="stamp">BUILD V7</div>
+  <div class="stamp">BUILD V8</div>
   <div class="brand">Stasera <em>Dove?</em><small>TACCUINO DEI RISTORANTI</small></div>
   <div class="board-line" id="boardline">Il menu di stasera si scrive qui…</div>
 </header>
@@ -410,58 +477,17 @@ h2,.empty b{text-wrap:balance}
 
 <main>
 
-  <!-- ============ VISTA: STASERA (configuratore) ============ -->
+  <!-- ============ VISTA: STASERA (rito delle tre domande) ============ -->
   <section id="v-wizard">
     <h2>Cosa si mangia <span>stasera</span>?</h2>
 
-    <div class="qcard">
-      <div class="qlabel">1 · Cosa ti va?</div>
-      <div class="chips" data-g="type">
-        <div class="chip on" data-v="any">🤷 Qualsiasi</div>
-        <div class="chip" data-v="pizza">🍕 Pizza</div>
-        <div class="chip" data-v="risto">🍝 Ristorante</div>
-        <div class="chip" data-v="carne">🥩 Carne &amp; griglia</div>
-        <div class="chip" data-v="pesce">🐟 Pesce</div>
-        <div class="chip" data-v="brunch">🥐 Brunch</div>
-        <div class="chip" data-v="burger">🍔 Burger</div>
-        <div class="chip" data-v="etnico">🥢 Etnico</div>
-        <div class="chip" data-v="surprise">🎲 Sorprendimi</div>
-      </div>
+    <div class="wizhero">
+      <div class="big">Tre tocchi e si cena 🍽️</div>
+      <div class="sub2">Una domanda alla volta — cosa, budget, zona. Tocca una risposta qui sotto per cambiarla.</div>
+      <div class="anspills" id="anspills"></div>
+      <button class="btn" data-act="wiz-start" style="margin-top:16px">✨ Scegli in 3 tocchi</button>
+      <button class="btn ghost" data-act="find" style="margin-top:9px">🔍 Consiglia con le risposte attuali</button>
     </div>
-
-    <div class="qcard">
-      <div class="qlabel">2 · Quanto vuoi spendere (a testa)?</div>
-      <div class="chips" data-g="budget">
-        <div class="chip on" data-v="0">Indifferente</div>
-        <div class="chip" data-v="1">€ · fino a 20</div>
-        <div class="chip" data-v="2">€€ · 20–40</div>
-        <div class="chip" data-v="3">€€€ · 40–70</div>
-        <div class="chip" data-v="4">€€€€ · oltre 70</div>
-      </div>
-    </div>
-
-    <div class="qcard">
-      <div class="qlabel">3 · Dove?</div>
-      <div class="chips" data-g="zone">
-        <div class="chip on" data-v="any">🗺️ Ovunque</div>
-        <div class="chip" data-v="Bergamo città">Bergamo città</div>
-        <div class="chip" data-v="Bergamo provincia">Bergamo provincia</div>
-        <div class="chip" data-v="Monza &amp; Brianza">Monza &amp; Brianza</div>
-        <div class="chip" data-v="Milano">Milano</div>
-        <div class="chip" data-v="Como / Lecco / Adda">Como / Lecco / Adda</div>
-        <div class="chip" data-v="Brescia &amp; Laghi">Brescia &amp; Laghi</div>
-        <div class="chip" data-v="Sardegna">🏖️ Sardegna</div>
-      </div>
-    </div>
-
-    <div class="qcard">
-      <div class="qlabel">4 · Filtro extra</div>
-      <div class="chips">
-        <div class="chip tgl" data-toggle="openNow">🟢 Solo aperti stasera</div>
-      </div>
-    </div>
-
-    <button class="btn" data-act="find">🔍 Consiglia dove andare</button>
 
     <div id="results"></div>
   </section>
@@ -512,7 +538,7 @@ h2,.empty b{text-wrap:balance}
 
 </main>
 
-<footer>STASERA DOVE? · BUILD V7 · ARCHIVIO E RECENSIONI CONDIVISI</footer>
+<footer>STASERA DOVE? · BUILD V8 · ARCHIVIO E RECENSIONI CONDIVISI</footer>
 
 <nav>
   <button class="on" data-nav="v-wizard"><b>🍽️</b>Stasera</button>
@@ -530,6 +556,20 @@ h2,.empty b{text-wrap:balance}
 
 <!-- ============ MODALI ============ -->
 <div class="overlay" id="overlay" data-act="close-modals"></div>
+
+<div class="modal" id="m-wiz">
+  <div class="modal-inner">
+    <button class="mclose" data-act="close-modals" aria-label="Chiudi">✕</button>
+    <div class="wdots" id="wdots" aria-hidden="true"><i></i><i></i><i></i></div>
+    <h3 id="wq"></h3>
+    <div class="msub" id="wsub"></div>
+    <div class="wopts" id="wopts"></div>
+    <div class="wfoot">
+      <button class="wback" id="wback" data-act="wiz-back">← Indietro</button>
+      <button class="wskip" data-act="wiz-skip">Salta →</button>
+    </div>
+  </div>
+</div>
 
 <div class="modal" id="m-review">
   <div class="modal-inner">
@@ -763,6 +803,77 @@ function logoHTML(name, website){
 function priceHTML(p){
   p = Math.min(4, Math.max(1, p||2));
   return '€'.repeat(p) + (p<4 ? '<i>' + '€'.repeat(4-p) + '</i>' : '');
+}
+
+/* ---------- V8 · foto di riserva per tipologia ----------
+   Quando il locale non ha una foto sua (✏️, diario o og:image raccolta), la
+   copertina mostra un piatto d'ambiente della sua cucina — scatti Unsplash
+   (unsplash.com/license: uso libero anche commerciale, niente attribuzione),
+   salvati nel repo e precache-ati: funzionano anche offline. L'etichetta
+   "foto d'ambiente" evita di spacciarli per piatti del locale. */
+const FB_PHOTO = {
+  Pizzeria:'img/fb-pizzeria.jpg', Ristorante:'img/fb-ristorante.jpg',
+  Carne:'img/fb-carne.jpg', Griglieria:'img/fb-griglieria.jpg',
+  Pesce:'img/fb-pesce.jpg', Brunch:'img/fb-brunch.jpg',
+  Burger:'img/fb-burger.jpg', Galletto:'img/fb-galletto.jpg',
+  Cinese:'img/fb-cinese.jpg', Giapponese:'img/fb-giapponese.jpg'
+};
+function fallbackPhotoFor(r){
+  const ty = r.ty || [];
+  const t = ty.find(function(x){ return FB_PHOTO[x] && x !== 'Ristorante'; }) ||
+            ty.find(function(x){ return FB_PHOTO[x]; });
+  return t ? FB_PHOTO[t] : FB_PHOTO.Ristorante;
+}
+
+/* ---------- V8 · il rito delle tre domande (una alla volta) ---------- */
+const WIZ_STEPS = [
+  {g:'type', q:'Cosa ti va stasera?', sub:'Un tocco e passiamo alla prossima.', opts:[
+    ['any','🤷','Qualsiasi'],['surprise','🎲','Sorprendimi'],['pizza','🍕','Pizza'],
+    ['risto','🍝','Ristorante'],['carne','🥩','Carne & griglia'],['pesce','🐟','Pesce'],
+    ['brunch','🥐','Brunch'],['burger','🍔','Burger'],['etnico','🥢','Etnico']
+  ]},
+  {g:'budget', q:'Quanto a testa?', sub:'Il portafoglio parla ora o tace per sempre.', opts:[
+    ['0','💫','Indifferente'],['1','€','Fino a 20'],['2','€€','20 – 40'],
+    ['3','€€€','40 – 70'],['4','€€€€','Oltre 70']
+  ]},
+  {g:'zone', q:'In che zona?', sub:'L’ultima: dove vi porta la serata?', opts:[
+    ['any','🗺️','Ovunque'],['Bergamo città','🏰','Bergamo città'],['Bergamo provincia','🌄','Bergamo provincia'],
+    ['Monza & Brianza','🏙️','Monza & Brianza'],['Milano','🌆','Milano'],['Como / Lecco / Adda','🌊','Como · Lecco · Adda'],
+    ['Brescia & Laghi','⛵','Brescia & Laghi'],['Sardegna','🏖️','Sardegna']
+  ]}
+];
+function ansLabel(g){
+  if(g==='type'){
+    const m = {any:'Qualsiasi',pizza:'🍕 Pizza',risto:'🍝 Ristorante',carne:'🥩 Carne',pesce:'🐟 Pesce',brunch:'🥐 Brunch',burger:'🍔 Burger',etnico:'🥢 Etnico',surprise:'🎲 Sorpresa'};
+    return m[S.ans.type] || S.ans.type;
+  }
+  if(g==='budget') return BUDGET_LABEL[S.ans.budget];
+  return S.ans.zone === 'any' ? 'Ovunque' : S.ans.zone;
+}
+function updateAnsPills(){
+  const el = qs('#anspills'); if(!el) return;
+  el.innerHTML =
+    '<button class="anspill" data-act="wiz-open" data-step="0"><em>Cosa</em> ' + esc(ansLabel('type')) + '</button>' +
+    '<button class="anspill" data-act="wiz-open" data-step="1"><em>Budget</em> ' + esc(ansLabel('budget')) + '</button>' +
+    '<button class="anspill" data-act="wiz-open" data-step="2"><em>Zona</em> ' + esc(ansLabel('zone')) + '</button>' +
+    '<button class="anspill tgl2' + (S.ans.openNow ? ' on' : '') + '" data-act="wiz-tglopen">🟢 Solo aperti stasera</button>';
+}
+function renderWiz(){
+  const st = WIZ_STEPS[S.wizStep];
+  qs('#wq').textContent = (S.wizStep+1) + ' · ' + st.q;
+  qs('#wsub').textContent = st.sub;
+  const cur = st.g === 'budget' ? String(S.ans.budget) : S.ans[st.g];
+  qs('#wopts').innerHTML = st.opts.map(function(o){
+    const wide = (o[0]==='any' || o[0]==='0') ? ' wide' : '';
+    return '<button class="wopt' + wide + (String(cur)===o[0] ? ' on' : '') + '" data-act="wiz-pick" data-v="' + esc(o[0]) + '"><b>' + o[1] + '</b><span>' + esc(o[2]) + '</span></button>';
+  }).join('');
+  qsa('#wdots i').forEach(function(d,i){ d.classList.toggle('on', i === S.wizStep); });
+  qs('#wback').style.visibility = S.wizStep === 0 ? 'hidden' : 'visible';
+  const sk = qs('#m-wiz .wskip'); if(sk) sk.textContent = S.wizStep === 2 ? 'Consiglia →' : 'Salta →';
+}
+function wizAdvance(){
+  if(S.wizStep < 2){ S.wizStep++; renderWiz(); }
+  else { closeModals(); runFind(); }
 }
 
 /* ---------- Copertine generate per i locali ----------
@@ -1121,6 +1232,7 @@ function updateBoard(){
   parts.push(a.zone==='any' ? 'ovunque' : a.zone);
   if(a.openNow) parts.push('aperti stasera');
   qs('#boardline').textContent = parts.join(' · ');
+  updateAnsPills();
 }
 
 /* ---------- Riflettore (card flottante) ---------- */
@@ -1159,11 +1271,12 @@ function renderSpot(){
     ? (isClosedToday(r) ? '<span class="tag warn">🔴 chiuso stasera</span>' : '<span class="tag open">🟢 aperto stasera</span>')
     : '';
   const photo = heroPhotoFor(r);
+  const himg = photo || fallbackPhotoFor(r);
   const isPick = !!(S.surprisePick && S.surprisePick.r.id === r.id);
   const hero =
     '<div class="hero"' + (photo ? ' data-act="zoom-hero" style="cursor:zoom-in"' : '') + '>' +
       coverHTML(r, 'herocover') +
-      (photo ? '<img class="heroimg" src="' + esc(photo) + '" alt="" loading="lazy">' : '') +
+      '<img class="heroimg" src="' + esc(himg) + '" alt="" loading="lazy">' +
       '<div class="shade"></div>' +
       '<div class="hpr">' + priceHTML(r.p) + '</div>' +
       (!photo ? '<button class="addph" data-act="hero-addphoto" data-id="' + r.id + '">📷 Aggiungi foto</button>' : '') +
@@ -1242,8 +1355,10 @@ function cardHTML(r, opts){
     : '';
   const headAttr = (opts.idx != null) ? ' data-act="open-spot" data-idx="' + opts.idx + '"' : '';
   const cph = heroPhotoFor(r);
-  const cover = '<div class="covbox' + (cph ? ' has-photo' : '') + '">' + coverHTML(r, 'cardcover') +
-    (cph ? '<img class="cardcover-img" src="' + esc(cph) + '" alt="" loading="lazy">' : '') + '</div>';
+  const cimg = cph || fallbackPhotoFor(r);
+  const cover = '<div class="covbox has-photo">' + coverHTML(r, 'cardcover') +
+    '<img class="cardcover-img" src="' + esc(cimg) + '" alt="" loading="lazy">' +
+    (cph ? '' : '<span class="fbnote">FOTO D’AMBIENTE</span>') + '</div>';
   return '' +
   '<div class="card' + (opts.pick ? ' pick' : '') + '">' +
     (opts.pick ? '<div class="pick-tag">🎲 Il destino ha deciso</div>' : '') +
@@ -1922,6 +2037,21 @@ document.addEventListener('click', function(e){
   if(!el) return;
   const act = el.dataset.act, id = el.dataset.id;
   switch(act){
+    case 'wiz-start': S.wizStep = 0; renderWiz(); openModal('m-wiz'); break;
+    case 'wiz-open': S.wizStep = parseInt(el.dataset.step,10)||0; renderWiz(); openModal('m-wiz'); break;
+    case 'wiz-back': if(S.wizStep>0){ S.wizStep--; renderWiz(); } break;
+    case 'wiz-skip': wizAdvance(); break;
+    case 'wiz-pick': {
+      const st = WIZ_STEPS[S.wizStep]; const v = el.dataset.v;
+      if(st.g==='budget') S.ans.budget = parseInt(v,10); else S.ans[st.g] = v;
+      qsa('#wopts .wopt').forEach(function(w){ w.classList.remove('on'); });
+      el.classList.add('on');
+      updateBoard();
+      // un attimo per vedere la scelta premuta, poi la prossima domanda
+      setTimeout(wizAdvance, 170);
+      break;
+    }
+    case 'wiz-tglopen': S.ans.openNow = !S.ans.openNow; updateBoard(); break;
     case 'find': runFind(); break;
     case 'reroll': runFind(); break;
     case 'showall': S.showAll = true; renderResults(); break;

@@ -84,6 +84,16 @@ connessione** vedi subito la versione nuova.
 
 ---
 
+## 🆕 Novità della V8
+
+- 💎 **Liquid glass** — dock di navigazione flottante in vetro, modali e riflettore sfocati,
+  hero traslucido; il cielo dell'Ora Blu ora ha un'aurora che deriva lentissima
+- 🃏 **Domande a popup** — le 3 domande arrivano **una alla volta** in una scheda che avanza
+  da sola al tocco; le risposte restano nell'hero come pill, toccale per cambiarle
+- 📸 **Foto sempre in copertina** — foto vera del locale (caricata o raccolta dal suo sito) o,
+  in mancanza, un **piatto d'ambiente della sua cucina** (scatti Unsplash — licenza libera
+  anche commerciale, salvati in `img/` e funzionanti offline, etichettati "foto d'ambiente")
+
 ## 🆕 Novità della V6
 
 - 🗑️ **Recensioni eliminabili** — ognuno può modificare/eliminare solo le proprie (anche le voci "da recensire")
