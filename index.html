@@ -463,6 +463,39 @@ body{padding-bottom:calc(100px + env(safe-area-inset-bottom))}
 .anspill.tgl2.on em{color:#0c2b1a}
 .wopt:focus-visible,.wback:focus-visible,.wskip:focus-visible,.anspill:focus-visible{outline:2px solid rgba(255,160,107,.8);outline-offset:2px}
 @media (prefers-reduced-motion: reduce){#aurora,.wopt{animation:none}}
+/* ========== V8.2 · ACCENTO AZZURRO ==========
+   Via l'arancione da selezioni, CTA e accenti: azzurro chiaro nelle tonalità
+   del cielo. Restano d'oro le stelle/classifica (premio, non selezione) e
+   verde menta gli "aperti" (semaforo). */
+:root{--azzurro:#8fd3ff;--azzurro-s:#c4e7ff;--su-azzurro:#0d2038}
+.brand em{background:linear-gradient(92deg,var(--azzurro-s),var(--azzurro));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+h2 span{color:var(--azzurro)}
+.board-line{background:rgba(143,211,255,.08);border-color:rgba(143,211,255,.24);color:#bfe3ff}
+.btn{background:linear-gradient(135deg,#9fdcff,#5aa8e8);color:var(--su-azzurro);box-shadow:0 12px 30px -12px rgba(90,168,232,.55)}
+.btn:hover{box-shadow:0 14px 36px -10px rgba(90,168,232,.65)}
+.btn.ghost{background:rgba(143,211,255,.08);color:var(--azzurro);border:1px solid rgba(143,211,255,.4);box-shadow:none}
+.btn.olive{background:rgba(247,238,222,.07);color:#e9e2d6;border:1px solid var(--linea);box-shadow:none}
+.chip.on{background:var(--azzurro);border-color:var(--azzurro);color:var(--su-azzurro);box-shadow:0 6px 20px -8px rgba(143,211,255,.5)}
+.wopt.on{background:var(--azzurro);border-color:var(--azzurro);color:var(--su-azzurro)}
+.wdots i.on{background:var(--azzurro)}
+.wskip,.spot-all{color:var(--azzurro)}
+nav button.on{color:var(--azzurro-s)}
+.tag.new{background:rgba(143,211,255,.10);border-color:rgba(143,211,255,.38);color:var(--azzurro)}
+.ab2.go{background:linear-gradient(135deg,#9fdcff,#5aa8e8);border:none;color:var(--su-azzurro);font-weight:800;box-shadow:0 8px 20px -10px rgba(90,168,232,.6)}
+.pending{border-left:3px solid var(--azzurro)}
+.chip:hover{border-color:rgba(143,211,255,.55)}
+.card:hover{border-color:rgba(143,211,255,.32)}
+.ab:hover,.ab2:hover,.snav:hover{border-color:rgba(143,211,255,.5)}
+.photobtn:hover{border-color:rgba(143,211,255,.5)}
+#toast{border-color:rgba(143,211,255,.4)}
+#spotcard{box-shadow:0 40px 90px -30px rgba(10,8,22,1), 0 0 60px -20px rgba(143,211,255,.35), inset 0 1px 0 rgba(247,238,222,.14)}
+#aurora{background:radial-gradient(circle at 50% 50%, rgba(143,211,255,.13), transparent 62%)}
+.chip:focus-visible,.btn:focus-visible,.ab:focus-visible,.ab2:focus-visible,.snav:focus-visible,.iconbtn:focus-visible,
+.mclose:focus-visible,.spotx:focus-visible,.spot-all:focus-visible,.photobtn:focus-visible,.rm:focus-visible,
+.addph:focus-visible,nav button:focus-visible,.wopt:focus-visible,.wback:focus-visible,.wskip:focus-visible,.anspill:focus-visible{outline:2px solid rgba(143,211,255,.85)}
+.searchbar input:focus-visible,.field input:focus-visible,.field textarea:focus-visible,.field select:focus-visible{
+  outline:none;border-color:rgba(143,211,255,.6);box-shadow:0 0 0 3px rgba(90,168,232,.20);
+}
 </style>
 </head>
 <body>
