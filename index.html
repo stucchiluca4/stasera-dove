@@ -452,7 +452,6 @@ body{padding-bottom:calc(100px + env(safe-area-inset-bottom))}
   border:1px solid var(--vetro-bordo);border-radius:24px;padding:20px 18px 18px;margin-top:12px;
   box-shadow:0 24px 60px -30px rgba(8,6,20,.95), inset 0 1px 0 rgba(247,238,222,.14)}
 .wizhero .big{font-family:'Bricolage Grotesque','Inter',sans-serif;font-size:24px;font-weight:800;letter-spacing:-.4px;line-height:1.12}
-.wizhero .sub2{color:var(--sabbia);font-size:13px;margin-top:6px}
 .anspills{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
 .anspill{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--linea);border-radius:999px;
   background:rgba(247,238,222,.06);color:#efe8db;padding:9px 13px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;
@@ -504,7 +503,7 @@ nav button.on{color:var(--azzurro-s)}
 <header>
   <div class="stamp">BUILD V8</div>
   <div class="brand">Stasera <em>Dove?</em><small>TACCUINO DEI RISTORANTI</small></div>
-  <div class="board-line" id="boardline">Il menu di stasera si scrive qui…</div>
+  <div class="board-line" id="boardline"></div>
 </header>
 
 <div id="membanner" hidden>⚠️ Archivio in sola memoria: le modifiche non verranno salvate su questo dispositivo.</div>
@@ -516,11 +515,10 @@ nav button.on{color:var(--azzurro-s)}
     <h2>Cosa si mangia <span>stasera</span>?</h2>
 
     <div class="wizhero">
-      <div class="big">Tre tocchi e si cena 🍽️</div>
-      <div class="sub2">Una domanda alla volta — cosa, budget, zona. Tocca una risposta qui sotto per cambiarla.</div>
+      <div class="big">Scegli dove cenare</div>
       <div class="anspills" id="anspills"></div>
-      <button class="btn" data-act="wiz-start" style="margin-top:16px">✨ Scegli in 3 tocchi</button>
-      <button class="btn ghost" data-act="find" style="margin-top:9px">🔍 Consiglia con le risposte attuali</button>
+      <button class="btn" data-act="wiz-start" style="margin-top:16px">Scegli in tre passaggi</button>
+      <button class="btn ghost" data-act="find" style="margin-top:9px">Consiglia con le risposte attuali</button>
     </div>
 
     <div id="results"></div>
@@ -596,7 +594,6 @@ nav button.on{color:var(--azzurro-s)}
     <button class="mclose" data-act="close-modals" aria-label="Chiudi">✕</button>
     <div class="wdots" id="wdots" aria-hidden="true"><i></i><i></i><i></i></div>
     <h3 id="wq"></h3>
-    <div class="msub" id="wsub"></div>
     <div class="wopts" id="wopts"></div>
     <div class="wfoot">
       <button class="wback" id="wback" data-act="wiz-back">← Indietro</button>
@@ -684,7 +681,7 @@ nav button.on{color:var(--azzurro-s)}
 <div class="modal" id="m-discover">
   <div class="modal-inner">
     <button class="mclose" data-act="close-modals" aria-label="Chiudi">✕</button>
-    <h3>🔮 Nuove scoperte</h3>
+    <h3>Nuove scoperte</h3>
     <div class="msub">Posti veri trovati sul web in base ai vostri gusti e alle risposte di stasera.</div>
     <div id="disclist"></div>
   </div>
@@ -694,7 +691,7 @@ nav button.on{color:var(--azzurro-s)}
   <div class="modal-inner">
     <button class="mclose" data-act="close-modals" aria-label="Chiudi">✕</button>
     <h3>👤 Come ti chiami?</h3>
-    <div class="msub">Il nome firma le tue recensioni e i locali che aggiungi: gli amici lo vedranno nella sezione 🔔 Novità.</div>
+    <div class="msub">Il nome firma le tue recensioni e i locali che aggiungi.</div>
     <div class="field"><label>Il tuo nome</label><input id="nm-name" placeholder="es. Luca" maxlength="20"></div>
     <button class="btn" data-act="save-name">Salva</button>
   </div>
@@ -861,16 +858,16 @@ function fallbackPhotoFor(r){
 
 /* ---------- V8 · il rito delle tre domande (una alla volta) ---------- */
 const WIZ_STEPS = [
-  {g:'type', q:'Cosa ti va stasera?', sub:'Un tocco e passiamo alla prossima.', opts:[
+  {g:'type', q:'Cosa ti va stasera?', opts:[
     ['any','🤷','Qualsiasi'],['surprise','🎲','Sorprendimi'],['pizza','🍕','Pizza'],
     ['risto','🍝','Ristorante'],['carne','🥩','Carne & griglia'],['pesce','🐟','Pesce'],
     ['brunch','🥐','Brunch'],['burger','🍔','Burger'],['etnico','🥢','Etnico']
   ]},
-  {g:'budget', q:'Quanto a testa?', sub:'Il portafoglio parla ora o tace per sempre.', opts:[
+  {g:'budget', q:'Quanto a testa?', opts:[
     ['0','💫','Indifferente'],['1','€','Fino a 20'],['2','€€','20 – 40'],
     ['3','€€€','40 – 70'],['4','€€€€','Oltre 70']
   ]},
-  {g:'zone', q:'In che zona?', sub:'L’ultima: dove vi porta la serata?', opts:[
+  {g:'zone', q:'In che zona?', opts:[
     ['any','🗺️','Ovunque'],['Bergamo città','🏰','Bergamo città'],['Bergamo provincia','🌄','Bergamo provincia'],
     ['Monza & Brianza','🏙️','Monza & Brianza'],['Milano','🌆','Milano'],['Como / Lecco / Adda','🌊','Como · Lecco · Adda'],
     ['Brescia & Laghi','⛵','Brescia & Laghi'],['Sardegna','🏖️','Sardegna']
@@ -895,7 +892,6 @@ function updateAnsPills(){
 function renderWiz(){
   const st = WIZ_STEPS[S.wizStep];
   qs('#wq').textContent = (S.wizStep+1) + ' · ' + st.q;
-  qs('#wsub').textContent = st.sub;
   const cur = st.g === 'budget' ? String(S.ans.budget) : S.ans[st.g];
   qs('#wopts').innerHTML = st.opts.map(function(o){
     const wide = (o[0]==='any' || o[0]==='0') ? ' wide' : '';
@@ -1226,7 +1222,7 @@ function scoreRestaurant(r, a){
   } else { s += 10; }
   const ri = ratingInfo(r.id);
   if(ri){ s += ri.avg * 6; if(ri.avg >= 4) why.push('vi era piaciuto molto'); }
-  else { s += 8; why.push('ancora da provare 🆕'); }
+  else { s += 8; why.push('ancora da provare'); }
   const lv = lastVisitTs(r.id);
   if(lv && (Date.now()-lv) < 30*86400000){ s -= 15; why.push('ci siete stati da poco'); }
   if(!a.openNow && isClosedToday(r)){ s -= 4; }
@@ -1289,7 +1285,7 @@ function spotActionsHTML(r){
     '<div class="acts2">' +
       enrichBtn +
       '<button class="ab2" data-act="review" data-id="' + r.id + '">✍️ Recensione</button>' +
-      '<button class="ab2 go" data-act="choose" data-id="' + r.id + '">✅ Scelto!</button>' +
+      '<button class="ab2 go" data-act="choose" data-id="' + r.id + '">✅ Scelto</button>' +
       '<button class="ab2" data-act="edit" data-id="' + r.id + '" style="flex:0 0 46px">✏️</button>' +
     '</div>';
 }
@@ -1314,7 +1310,7 @@ function renderSpot(){
       '<div class="shade"></div>' +
       '<div class="hpr">' + priceHTML(r.p) + '</div>' +
       (!photo ? '<button class="addph" data-act="hero-addphoto" data-id="' + r.id + '">📷 Aggiungi foto</button>' : '') +
-      (isPick ? '<div class="hdice">🎲 IL DESTINO</div>' : '') +
+      (isPick ? '<div class="hdice">SCELTA CASUALE</div>' : '') +
       '<div class="htit"><h3>' + esc(r.n) + '</h3><div class="sub">📍 ' + esc(r.t) + ' · ' + esc(r.z) + '</div></div>' +
     '</div>';
   const body =
@@ -1412,7 +1408,7 @@ function cardHTML(r, opts){
     '<div class="acts2">' +
       enrichBtn +
       '<button class="ab2" data-act="review" data-id="' + r.id + '">✍️ Recensione</button>' +
-      '<button class="ab2 go" data-act="choose" data-id="' + r.id + '">✅ Scelto!</button>' +
+      '<button class="ab2 go" data-act="choose" data-id="' + r.id + '">✅ Scelto</button>' +
       '<button class="ab2" data-act="edit" data-id="' + r.id + '" style="flex:0 0 46px">✏️</button>' +
     '</div>' +
   '</div>';
@@ -1460,7 +1456,7 @@ function renderDiary(){
   if(!el) return;
   const revs = activeRev();
   if(!revs.length){
-    el.innerHTML = '<div class="empty"><b>Il diario è ancora bianco</b>Quando scegliete un posto con ✅ Scelto!, lo ritroverete qui da recensire.</div>';
+    el.innerHTML = '<div class="empty"><b>Nessuna cena registrata</b>Quando scegli un locale con «Scelto», comparirà qui da recensire.</div>';
     return;
   }
   const byId = {}; S.db.forEach(function(r){ byId[r.id] = r; });
@@ -1703,7 +1699,7 @@ function openReview(rid, revId){
   paintStars(); paintWho(); paintPhoto(); openModal('m-review');
 }
 function saveReview(){
-  if(!S.mRating){ toast('Dai almeno una stella ⭐'); return; }
+  if(!S.mRating){ toast('Seleziona un voto in stelle'); return; }
   const data = {
     rid:S.reviewRid, who:S.mWho, rating:S.mRating,
     spend: parseFloat(qs('#rv-spend').value) || null,
@@ -1832,7 +1828,7 @@ function pickJSON(txt){
 }
 
 async function enrich(rid, btn){
-  if(!S.claudeEnv){ toast('✨ Le funzioni AI sono attive solo dentro l’app Claude', 3500); return; }
+  if(!S.claudeEnv){ toast('Le funzioni AI sono attive solo dentro l’app Claude', 3500); return; }
   const r = S.db.find(function(x){ return x.id===rid; });
   if(!r) return;
   const old = btn.textContent;
@@ -1859,7 +1855,7 @@ async function enrich(rid, btn){
 }
 
 async function discover(btn){
-  if(!S.claudeEnv){ toast('🔮 Le funzioni AI sono attive solo dentro l’app Claude', 3500); return; }
+  if(!S.claudeEnv){ toast('Le funzioni AI sono attive solo dentro l’app Claude', 3500); return; }
   const old = btn.textContent;
   btn.disabled = true; btn.innerHTML = '<span class="spin">⏳</span> l’AI sta cercando sul web…';
   try{
@@ -1978,7 +1974,7 @@ async function togglePush(btn){
       if(perm !== 'granted'){ toast('Permesso negato: attivalo dalle impostazioni'); btn.disabled=false; updatePushUI(); return; }
       const sub = await reg.pushManager.subscribe({userVisibleOnly:true, applicationServerKey: urlB64ToU8(PUSH.publicKey)});
       await fsSaveSub(sub);
-      toast('🔔 Notifiche attivate! Ti avvisiamo delle novità del gruppo');
+      toast('Notifiche attivate: riceverai le novità del gruppo');
     }
   }catch(e){ toast('⚠️ Operazione non riuscita: riprova'); }
   btn.disabled = false;
@@ -2103,10 +2099,10 @@ document.addEventListener('click', function(e){
     case 'review': openReview(id, null); break;
     case 'choose': {
       const dup = S.rev.some(function(x){ return x.rid===id && !(x.rating>0); });
-      if(dup){ toast('📌 È già tra i "da recensire" nel Diario'); break; }
+      if(dup){ toast('Già nel Diario tra i locali da recensire'); break; }
       S.rev.push({id:'rv'+Date.now(), rid:id, who:'In due', rating:0, spend:null, date:today(), note:'', photo:null});
       persist(); renderDiary(); closeSpot();
-      toast('🎉 Ottima scelta! Buona cena — poi raccontatela nel Diario');
+      toast('Aggiunto al Diario: da recensire dopo la cena');
       break;
     }
     case 'edit': openEdit(id); break;
