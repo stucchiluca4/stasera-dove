@@ -254,7 +254,7 @@ h2 span{color:var(--aperol-s)}
 .rev h4{font-size:15.5px;font-weight:700;color:var(--crema)}
 .rev .meta{font-size:12px;color:var(--sabbia);margin-top:3px}
 .rev .stars{color:var(--oro);font-size:15px;margin-top:6px;letter-spacing:2px}
-.rev p{font-size:13.5px;margin-top:7px;color:#d9d2e6}
+.rev p{font-size:14.5px;line-height:1.55;margin-top:7px;color:var(--crema)}
 .rev .revphoto{margin-top:10px;border-radius:13px;max-width:100%;max-height:230px;object-fit:cover;cursor:zoom-in;display:block}
 .pending{border-left:3px solid var(--aperol)}
 .divider{color:var(--sabbia);text-align:center;margin:18px 0 6px;font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase}
@@ -345,6 +345,7 @@ nav button.dot b::after{content:"";position:absolute;top:-2px;right:-9px;width:8
 #lightbox{position:fixed;inset:0;background:rgba(10,8,22,.95);z-index:300;display:none;align-items:center;justify-content:center;padding:16px}
 #lightbox.show{display:flex}
 #lightbox img{max-width:100%;max-height:100%;border-radius:12px}
+.lbx{position:absolute;top:calc(14px + env(safe-area-inset-top));right:14px;z-index:2;width:40px;height:40px;border-radius:99px;border:1px solid rgba(247,238,222,.3);background:rgba(10,8,22,.6);color:#fff;font-size:17px;cursor:pointer}
 /* ---------- Toast & banner ---------- */
 #toast{
   position:fixed;left:50%;transform:translateX(-50%);bottom:calc(98px + env(safe-area-inset-bottom));
@@ -698,7 +699,7 @@ nav button.on{color:var(--azzurro-s)}
 </div>
 
 <div id="toast"></div>
-<div id="lightbox" data-act="close-lightbox"><img id="lightbox-img" alt=""></div>
+<div id="lightbox" data-act="close-lightbox"><button class="lbx" data-act="close-lightbox" aria-label="Chiudi la foto">✕</button><img id="lightbox-img" alt=""></div>
 
 <script>
 'use strict';
@@ -1290,7 +1291,7 @@ function spotActionsHTML(r){
     '</div>';
 }
 function renderSpot(){
-  const x = S.results[S.spotIdx];
+  const x = spotList()[S.spotIdx];
   if(!x){ closeSpot(); return; }
   const r = x.r;
   const ri = ratingInfo(r.id);
@@ -1323,24 +1324,26 @@ function renderSpot(){
   const foot =
     '<div class="spot-foot">' +
       '<button class="snav" data-act="spot-prev" aria-label="Locale precedente"' + (S.spotIdx<=0?' disabled':'') + '>‹</button>' +
-      '<div class="spot-count">' + (S.spotIdx+1) + ' di ' + S.results.length + '</div>' +
-      '<button class="snav" data-act="spot-next" aria-label="Locale successivo"' + (S.spotIdx>=S.results.length-1?' disabled':'') + '>›</button>' +
+      '<div class="spot-count">' + (S.spotIdx+1) + ' di ' + spotList().length + '</div>' +
+      '<button class="snav" data-act="spot-next" aria-label="Locale successivo"' + (S.spotIdx>=spotList().length-1?' disabled':'') + '>›</button>' +
     '</div>' +
     (isPick ? '<div style="padding:0 16px 8px"><button class="btn ghost" style="margin-top:0" data-act="reroll">🎲 Rilancia il dado</button></div>' : '') +
-    '<button class="spot-all" data-act="spot-close">Vedi la lista completa (' + S.results.length + ') ↓</button>';
+    '<button class="spot-all" data-act="spot-close">Vedi la lista completa (' + spotList().length + ') ↓</button>';
   const card = qs('#spotcard');
   card.innerHTML = '<button class="spotx" data-act="spot-close" aria-label="Chiudi">✕</button>' + hero + body + foot;
   card.classList.remove('in'); void card.offsetWidth; card.classList.add('in');
   card.scrollTop = 0;
 }
+function spotList(){ return S.spotSrc || S.results; }
 function openSpot(idx){
-  S.spotIdx = Math.max(0, Math.min(idx, S.results.length-1));
+  S.spotIdx = Math.max(0, Math.min(idx, spotList().length-1));
   S.spotOpen = true;
   renderSpot();
   qs('#spot').classList.add('show');
 }
 function closeSpot(){
   S.spotOpen = false;
+  S.spotSrc = null;
   qs('#spot').classList.remove('show');
   qs('#spotcard').style.transform = '';
 }
@@ -1359,7 +1362,7 @@ function initSpotGestures(){
   card.addEventListener('touchend', function(e){
     if(sx === null) return;
     const dx = e.changedTouches[0].pageX - sx; sx = null;
-    if(dx < -44 && S.spotIdx < S.results.length-1){ S.spotIdx++; renderSpot(); }
+    if(dx < -44 && S.spotIdx < spotList().length-1){ S.spotIdx++; renderSpot(); }
     else if(dx > 44 && S.spotIdx > 0){ S.spotIdx--; renderSpot(); }
   }, {passive:true});
 }
@@ -1383,7 +1386,7 @@ function cardHTML(r, opts){
   const enrichBtn = S.claudeEnv
     ? '<button class="ab2" data-act="enrich" data-id="' + r.id + '">✨ Completa con AI</button>'
     : '';
-  const headAttr = (opts.idx != null) ? ' data-act="open-spot" data-idx="' + opts.idx + '"' : '';
+  const headAttr = (opts.idx != null) ? ' data-act="open-spot" data-idx="' + opts.idx + '"' : (opts.archIdx != null ? ' data-act="open-arch" data-idx="' + opts.archIdx + '"' : '');
   const cph = heroPhotoFor(r);
   const cimg = cph || fallbackPhotoFor(r);
   const cover = '<div class="covbox has-photo">' + coverHTML(r, 'cardcover') +
@@ -1438,15 +1441,20 @@ function renderResults(){
 }
 
 /* ---------- Archivio ---------- */
-function renderList(){
-  const qEl = qs('#q'); if(!qEl) return;
-  const q = (qEl.value || '').toLowerCase().trim();
-  const list = activeDb().filter(function(r){
+function archFiltered(){
+  const qEl = qs('#q');
+  const q = ((qEl && qEl.value) || '').toLowerCase().trim();
+  return activeDb().filter(function(r){
     if(!q) return true;
     return (r.n + ' ' + r.t + ' ' + r.z + ' ' + r.ty.join(' ')).toLowerCase().indexOf(q) > -1;
   });
+}
+function renderList(){
+  const qEl = qs('#q'); if(!qEl) return;
+  const q = (qEl.value || '').toLowerCase().trim();
+  const list = archFiltered();
   qs('#dbcount').textContent = list.length + ' locali' + (q ? ' trovati' : ' in archivio') + ' · ' + activeRev().filter(function(x){return x.rating>0;}).length + ' recensioni';
-  qs('#dblist').innerHTML = list.map(function(r){ return cardHTML(r, {}); }).join('') ||
+  qs('#dblist').innerHTML = list.map(function(r, i){ return cardHTML(r, {archIdx: i}); }).join('') ||
     '<div class="empty"><b>Archivio vuoto</b>Aggiungi il primo locale con ➕.</div>';
 }
 
@@ -1513,7 +1521,7 @@ function feedItems(){
     items.push({ts:(x.updatedAt || new Date(x.date).getTime() || 0), ico:'⭐', name:x.by, photo:x.photo||null, revId:x.id,
       html:'<b>' + esc(x.by) + '</b> ha provato <b>' + esc(r ? r.n : 'un locale') + '</b> — ' +
         '<span style="color:var(--oro)">' + '★'.repeat(x.rating) + '</span>' +
-        (x.note ? '<div class="fnote">“' + esc(x.note.length>90 ? x.note.slice(0,90)+'…' : x.note) + '”</div>' : '')});
+        (x.note ? '<div class="fnote">“' + esc(x.note) + '”</div>' : '')});
   });
   items.sort(function(a,b){ return b.ts - a.ts; });
   return items.slice(0,100);
@@ -1982,10 +1990,18 @@ async function togglePush(btn){
 }
 async function updatePushUI(){
   const card = qs('#push-card'); if(!card) return;
-  if(!pushSupported()){ card.hidden = true; return; }
-  card.hidden = false;
   const st = qs('#push-status'), btn = qs('#push-btn');
   const iosNoApp = /iphone|ipad/i.test(navigator.userAgent||'') && !(window.matchMedia && matchMedia('(display-mode: standalone)').matches);
+  if(!pushSupported()){
+    if(iosNoApp && syncEnabled()){
+      card.hidden = false;
+      st.textContent = 'Su iPhone le notifiche funzionano solo dall\u2019app installata: tocca Condividi \u2192 \u00abAggiungi alla schermata Home\u00bb, poi riapri l\u2019app da l\u00ec e attivale qui.';
+      btn.hidden = true;
+    } else card.hidden = true;
+    return;
+  }
+  card.hidden = false;
+  btn.hidden = false;
   try{
     const reg = await navigator.serviceWorker.ready;
     const sub = await reg.pushManager.getSubscription();
@@ -2002,8 +2018,18 @@ async function updatePushUI(){
 }
 
 /* ---------- Lightbox ---------- */
-function openLightbox(src){ qs('#lightbox-img').src = src; qs('#lightbox').classList.add('show'); }
-function closeLightbox(){ qs('#lightbox').classList.remove('show'); qs('#lightbox-img').removeAttribute('src'); }
+function openLightbox(src){
+  qs('#lightbox-img').src = src; qs('#lightbox').classList.add('show');
+  try{ history.pushState({lb:1}, ''); }catch(e){}   // il tasto «indietro» chiude la foto, non l'app
+}
+function closeLightbox(fromPop){
+  const lb = qs('#lightbox');
+  if(!lb.classList.contains('show')) return;
+  lb.classList.remove('show'); qs('#lightbox-img').removeAttribute('src');
+  if(!fromPop && history.state && history.state.lb){ try{ history.back(); }catch(e){} }
+}
+window.addEventListener('popstate', function(){ closeLightbox(true); });
+document.addEventListener('keydown', function(e){ if(e.key === 'Escape') closeLightbox(); });
 
 /* ---------- Navigazione & eventi ---------- */
 function showView(id){
@@ -2086,11 +2112,16 @@ document.addEventListener('click', function(e){
     case 'reroll': runFind(); break;
     case 'showall': S.showAll = true; renderResults(); break;
     case 'open-spot': openSpot(parseInt(el.dataset.idx,10)||0); break;
+    case 'open-arch': {
+      S.spotSrc = archFiltered().map(function(r){ return {r: r, why: []}; });
+      openSpot(parseInt(el.dataset.idx,10)||0);
+      break;
+    }
     case 'spot-close': closeSpot(); break;
     case 'spot-prev': if(S.spotIdx>0){ S.spotIdx--; renderSpot(); } break;
-    case 'spot-next': if(S.spotIdx<S.results.length-1){ S.spotIdx++; renderSpot(); } break;
+    case 'spot-next': if(S.spotIdx<spotList().length-1){ S.spotIdx++; renderSpot(); } break;
     case 'zoom-hero': {
-      const x = S.results[S.spotIdx];
+      const x = spotList()[S.spotIdx];
       const p = x && heroPhotoFor(x.r);
       if(p) openLightbox(p);
       break;
