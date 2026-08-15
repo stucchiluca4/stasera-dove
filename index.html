@@ -554,6 +554,7 @@ nav button.on{color:var(--azzurro-s)}
       <div style="font-size:14px;min-width:0">👤 <b id="prof-name">—</b></div>
       <button class="ab2" style="flex:0 0 auto;padding:9px 13px" data-act="open-name">Cambia nome</button>
     </div>
+    <div class="count" id="syncstatus" style="margin:2px 2px 8px"></div>
     <div class="qcard" id="push-card" style="margin-left:0;margin-right:0" hidden>
       <div class="qlabel">Notifiche push</div>
       <div id="push-status" style="font-size:13px;color:var(--sabbia);line-height:1.5;margin-bottom:10px">…</div>
@@ -1100,23 +1101,43 @@ async function fsList(col, fromDoc){
   }while(token);
   return out;
 }
+function fsWriteOf(col, r, toFields){
+  return { update: {
+    name: 'projects/' + SYNC.projectId + '/databases/(default)/documents/' + col + '/' + r.id,
+    fields: toFields(r)
+  } };
+}
+async function fsCommit(writes){
+  const res = await fetch(fsBase() + ':commit?key=' + SYNC.apiKey, {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({writes: writes})
+  });
+  if(!res.ok) throw new Error('fs commit ' + res.status);
+}
 async function fsBatchWrite(col, docs, toFields){
-  // scrive fino a 500 documenti in un'unica richiesta (limite Firestore) via
-  // :commit — molto più veloce e robusta di N scritture sequenziali una a una
-  for(let i=0; i<docs.length; i+=500){
-    const chunk = docs.slice(i, i+500);
-    const writes = chunk.map(function(r){
-      return { update: {
-        name: 'projects/' + SYNC.projectId + '/databases/(default)/documents/' + col + '/' + r.id,
-        fields: toFields(r)
-      } };
-    });
-    const res = await fetch(fsBase() + ':commit?key=' + SYNC.apiKey, {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({writes: writes})
-    });
-    if(!res.ok) throw new Error('fs commit ' + res.status);
+  /* blocchi limitati sia per numero (500, limite Firestore) sia per peso
+     (~3.5MB: una richiesta :commit oltre i 10MB viene rifiutata e le foto
+     incorporate pesano). Se un blocco fallisce si ritenta un documento alla
+     volta, così un singolo documento problematico non blocca tutti gli altri. */
+  let chunk = [], size = 0, failed = 0;
+  const flush = async function(){
+    if(!chunk.length) return;
+    const writes = chunk.map(function(r){ return fsWriteOf(col, r, toFields); });
+    try{ await fsCommit(writes); }
+    catch(e){
+      for(let j=0; j<writes.length; j++){
+        try{ await fsCommit([writes[j]]); }catch(e2){ failed++; }
+      }
+    }
+    chunk = []; size = 0;
+  };
+  for(let i=0; i<docs.length; i++){
+    const w = JSON.stringify(fsWriteOf(col, docs[i], toFields)).length;
+    if(chunk.length && (chunk.length >= 500 || size + w > 3500000)) await flush();
+    chunk.push(docs[i]); size += w;
   }
+  await flush();
+  if(failed) throw new Error('fs commit: ' + failed + ' documenti non caricati');
 }
 async function syncCollection(col, arr, fromDoc, toFields, canPush){
   const remote = await fsList(col, fromDoc);
@@ -1125,7 +1146,7 @@ async function syncCollection(col, arr, fromDoc, toFields, canPush){
   remote.forEach(function(rr){
     const lr = arr.find(function(x){ return x.id === rr.id; });
     if(!lr){ arr.push(rr); changed = true; }
-    else if((rr.updatedAt||0) > (lr.updatedAt||0)){ Object.assign(lr, rr); changed = true; }
+    else if((rr.updatedAt||0) >= (lr.updatedAt||0)){ Object.assign(lr, rr); changed = true; }
     else if((lr.updatedAt||0) > (rr.updatedAt||0) && canPush(lr)){ toPush.push(lr); }
   });
   arr.forEach(function(lr){ if(!rmap[lr.id] && canPush(lr)) toPush.push(lr); });
@@ -1137,22 +1158,47 @@ async function syncNow(){
   if(!syncEnabled()) return;
   if(syncBusy){ syncQueued = true; return; }
   syncBusy = true;
-  let changed = false, touched = false;
+  let changed = false, okLoc = false, okRev = false;
   try{
-    const c = await syncCollection('locali', S.db, fromFsDoc, toFsFields, function(){ return true; });
-    changed = changed || c; touched = true;
-  }catch(e){ /* offline o permessi: si ritenta al prossimo aggancio */ }
-  try{
-    // solo recensioni completate (rating>0): la lista "da recensire" resta personale
-    const c = await syncCollection('recensioni', S.rev, fromFsRevDoc, toFsRevFields, function(x){ return x.rating>0; });
-    changed = changed || c;
-  }catch(e){ /* regole non ancora aggiornate o offline: le recensioni restano locali */ }
-  if(changed){ normalizeDb(); normalizeRev(); await persist(); renderAll(); }
-  if(!syncAnnounced && touched){
-    syncAnnounced = true; toast('☁️ Archivio condiviso sincronizzato');
+    try{
+      const c = await syncCollection('locali', S.db, fromFsDoc, toFsFields, function(){ return true; });
+      changed = changed || c; okLoc = true;
+    }catch(e){ S.syncErr = 'locali: ' + (e && e.message || e); }
+    try{
+      // solo recensioni completate (rating>0): la lista "da recensire" resta personale
+      const c = await syncCollection('recensioni', S.rev, fromFsRevDoc, toFsRevFields, function(x){ return x.rating>0; });
+      changed = changed || c; okRev = true;
+    }catch(e){ S.syncErr = 'recensioni: ' + (e && e.message || e); }
+    if(okLoc && okRev){ S.syncErr = null; S.syncOkTs = Date.now(); }
+    if(changed){
+      try{ normalizeDb(); normalizeRev(); }catch(e){}
+      try{ await persist(); }catch(e){ S.syncErr = 'salvataggio locale: ' + (e && e.message || e); }
+      try{ renderAll(); }catch(e){}
+    } else {
+      try{ updateSyncStatus(); }catch(e){}
+    }
+    if(!syncAnnounced && okLoc){
+      syncAnnounced = true; toast('☁️ Archivio condiviso sincronizzato');
+    }
+  } finally {
+    syncBusy = false;   // qualunque cosa accada, la sincronizzazione non resta mai bloccata
+    if(syncQueued){ syncQueued = false; scheduleSync(); }
   }
-  syncBusy = false;
-  if(syncQueued){ syncQueued = false; scheduleSync(); }
+}
+function updateSyncStatus(){
+  const el = qs('#syncstatus'); if(!el) return;
+  if(!syncEnabled()){ el.textContent = ''; return; }
+  if(S.syncErr){
+    el.textContent = '⚠️ Sincronizzazione non riuscita (' + S.syncErr + '). Riprova tra poco o riapri l\u2019app.';
+    el.style.color = 'var(--rosso)';
+  } else if(S.syncOkTs){
+    const t = new Date(S.syncOkTs);
+    el.textContent = '☁️ Sincronizzato con il gruppo alle ' + ('0'+t.getHours()).slice(-2) + ':' + ('0'+t.getMinutes()).slice(-2) + '.';
+    el.style.color = '';
+  } else {
+    el.textContent = '☁️ In attesa della prima sincronizzazione\u2026';
+    el.style.color = '';
+  }
 }
 function scheduleSync(){
   if(!syncEnabled()) return;
@@ -1533,6 +1579,7 @@ function updateFeedDot(){
   btn.classList.toggle('dot', !!(items.length && items[0].ts > (S.seenTs||0)));
 }
 function renderFeed(){
+  try{ updateSyncStatus(); }catch(e){}
   updatePushUI();
   const nameEl = qs('#prof-name');
   if(nameEl) nameEl.textContent = myName() || 'Senza nome';
