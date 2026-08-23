@@ -43,7 +43,7 @@ async function patchDoc(id, fields) {
 }
 
 /* indirizzi da non salvare mai come "sito ufficiale" del locale */
-const AGGREGATORI = /tripadvisor|thefork|quandoo|deliveroo|justeat|just-eat|glovo|ubereats|facebook|instagram|twitter|tiktok|youtube|linkedin|google\.|yelp|foursquare|wikipedia|50toppizza|gamberorosso|italiangourmet|misterdelivery|dishcovery|restaurantguru|menuonline|paginegialle|virgilio|misterdelivery|booking\.com|expedia|scattidigusto|puntarellarossa|dissapore|reddit|pinterest|amazon|prenotazione|thefork/i;
+const AGGREGATORI = /bing\.|duckduckgo|mojeek|brave\.com|ecosia|startpage|yandex|baidu|search\?|tripadvisor|thefork|quandoo|deliveroo|justeat|just-eat|glovo|ubereats|facebook|instagram|twitter|tiktok|youtube|linkedin|google\.|yelp|foursquare|wikipedia|50toppizza|gamberorosso|italiangourmet|misterdelivery|dishcovery|restaurantguru|menuonline|paginegialle|virgilio|misterdelivery|booking\.com|expedia|scattidigusto|puntarellarossa|dissapore|reddit|pinterest|amazon|prenotazione|thefork/i;
 const GLUTINE = /senza glutine|senzaglutine|gluten[\s-]?free|glutenfree|celiac|celiach|per celiaci|aic\b|impasto senza glutine|pizza senza glutine/i;
 
 async function cercaWeb(page, q) {
@@ -156,7 +156,12 @@ async function osmCerca(nome, comune) {
   for (let tent = 0; tent < 3; tent++) {
     try {
       const res = await fetch('https://overpass-api.de/api/interpreter', {
-        method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Accept': 'application/json',
+          'User-Agent': 'StaseraDove/1.0 (app di gruppo per scegliere dove cenare)'
+        },
         body: 'data=' + encodeURIComponent(q)
       });
       if (res.status === 429 || res.status === 504) { await new Promise(r => setTimeout(r, 6000)); continue; }
@@ -194,7 +199,13 @@ for (const d of lista) {
 
   if (!sito) {
     const res = await cercaWeb(page, `"${nome}" ${comune} ristorante pizzeria sito ufficiale`);
-    const buono = res.find(r => r.url && /^https?:\/\//i.test(r.url) && !AGGREGATORI.test(r.url));
+    const parole = nome.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .split(/[^a-z0-9]+/).filter(w => w.length > 2);
+    const buono = res.find(function(r){
+      if (!r.url || !/^https?:\/\//i.test(r.url) || AGGREGATORI.test(r.url)) return false;
+      let host = ''; try { host = new URL(r.url).hostname.toLowerCase().replace(/[^a-z0-9]/g, ''); } catch { return false; }
+      return parole.some(w => host.indexOf(w.replace(/[^a-z0-9]/g, '')) > -1);   // il dominio richiama il nome
+    });
     if (buono) {
       try { sito = new URL(buono.url).origin; } catch { sito = buono.url; }
       agg.website = { stringValue: sito };
