@@ -1,0 +1,42 @@
+name: Senza glutine e siti mancanti
+
+on:
+  workflow_dispatch:
+    inputs:
+      da:
+        description: 'Parti dal locale numero'
+        required: false
+        default: '0'
+        type: string
+      quanti:
+        description: 'Quanti locali controllare'
+        required: false
+        default: '400'
+        type: string
+      solo_senza:
+        description: 'Solo quelli mai controllati (1 = sì)'
+        required: false
+        default: '0'
+        type: string
+
+permissions: {}
+
+jobs:
+  glutine:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install Playwright
+        run: |
+          npm install --no-save playwright@1.49.1
+          npx playwright install --with-deps chromium
+      - name: Controlla senza glutine
+        run: node scripts/senza-glutine.mjs
+        env:
+          DA: ${{ inputs.da }}
+          QUANTI: ${{ inputs.quanti }}
+          SOLO_SENZA: ${{ inputs.solo_senza }}
