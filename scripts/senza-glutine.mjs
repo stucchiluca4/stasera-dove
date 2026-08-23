@@ -15,7 +15,8 @@ const API_KEY = 'AIzaSyB-m2ee3o0HVsy2aLanPPZUgBlJNQO8qUw';
 const BASE = `https://firestore.googleapis.com/v1/projects/${PROJECT}/databases/(default)/documents`;
 const DA = parseInt(process.env.DA || '0', 10);
 const QUANTI = parseInt(process.env.QUANTI || '400', 10);
-const SOLO_SENZA = process.env.SOLO_SENZA === '1';   // solo quelli non ancora controllati
+const SOLO_SENZA = process.env.SOLO_SENZA === '1';
+const VERBOSE = process.env.VERBOSE === '1';   // solo quelli non ancora controllati
 
 const gs = (f, k) => (f?.[k] && 'stringValue' in f[k]) ? f[k].stringValue : null;
 const gi = (f, k) => (f?.[k] && 'integerValue' in f[k]) ? parseInt(f[k].integerValue, 10) : null;
@@ -145,21 +146,32 @@ function frase(testo) {
 /* OpenStreetMap (dati aperti): spesso ha sito, telefono e perfino il campo
    diet:gluten_free compilato dalla comunità. */
 async function osmCerca(nome, comune) {
-  const pulito = nome.replace(/["\\]/g, ' ').trim();
-  const q = `[out:json][timeout:25];
-    area["name"="${comune.replace(/["\\]/g, ' ').split('(')[0].trim()}"]["boundary"="administrative"]->.a;
-    nwr["name"~"${pulito.split(/\s+/).slice(0,2).join('.*')}",i](area.a);
-    out tags 5;`;
-  try {
-    const res = await fetch('https://overpass-api.de/api/interpreter', {
-      method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: 'data=' + encodeURIComponent(q)
-    });
-    if (!res.ok) return null;
-    const d = await res.json();
-    const el = (d.elements || []).find(e => e.tags && (e.tags.amenity === 'restaurant' || e.tags.amenity === 'fast_food' || e.tags.cuisine)) || (d.elements || [])[0];
-    return el ? el.tags : null;
-  } catch { return null; }
+  const esc = t => t.replace(/[.*+?^${}()|[\]\\"]/g, '\\$&');
+  const paroleNome = nome.replace(/["\\]/g, ' ').trim().split(/\s+/).filter(Boolean).slice(0, 2).map(esc).join('.*');
+  const citta = comune.split('(')[0].trim().replace(/["\\]/g, ' ');
+  const q = `[out:json][timeout:30];
+    area["name"="${citta}"]["boundary"="administrative"]->.a;
+    nwr["name"~"${paroleNome}",i](area.a);
+    out tags 6;`;
+  for (let tent = 0; tent < 3; tent++) {
+    try {
+      const res = await fetch('https://overpass-api.de/api/interpreter', {
+        method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: 'data=' + encodeURIComponent(q)
+      });
+      if (res.status === 429 || res.status === 504) { await new Promise(r => setTimeout(r, 6000)); continue; }
+      if (!res.ok) { if (VERBOSE) console.log(`    osm HTTP ${res.status} · ${nome}`); return null; }
+      const d = await res.json();
+      const els = d.elements || [];
+      if (VERBOSE) console.log(`    osm ${nome} (${citta}): ${els.length} risultati`);
+      const el = els.find(e => e.tags && (e.tags.amenity === 'restaurant' || e.tags.amenity === 'fast_food' || e.tags.amenity === 'cafe' || e.tags.cuisine)) || els[0];
+      return el ? el.tags : null;
+    } catch (e) {
+      if (VERBOSE) console.log(`    osm errore · ${nome}: ${String(e.message || e).slice(0, 60)}`);
+      await new Promise(r => setTimeout(r, 2500));
+    }
+  }
+  return null;
 }
 
 const browser = await chromium.launch();
@@ -225,6 +237,7 @@ for (const d of lista) {
   agg.updatedAt = { integerValue: String(Date.now()) };
   try { await patchDoc(d.id, agg); } catch (e) { console.log(`  ✗ ${nome}: ${String(e.message).slice(0, 60)}`); }
 
+  await new Promise(r => setTimeout(r, 1200));
   if (gf === 1) { gfSito++; console.log(`✓ ${nome} (${comune}) — dichiarato dal locale`); }
   else if (gf === 2) { gfWeb++; console.log(`~ ${nome} (${comune}) — segnalato dal web`); }
   else { nulla++; console.log(`· ${nome} (${comune}) — nessun riscontro`); }

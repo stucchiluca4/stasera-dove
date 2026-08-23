@@ -18,6 +18,11 @@ on:
         required: false
         default: '0'
         type: string
+      verbose:
+        description: 'Diagnostica dettagliata (1 = sì)'
+        required: false
+        default: '0'
+        type: string
 
 permissions: {}
 
@@ -40,3 +45,4 @@ jobs:
           DA: ${{ inputs.da }}
           QUANTI: ${{ inputs.quanti }}
           SOLO_SENZA: ${{ inputs.solo_senza }}
+          VERBOSE: ${{ inputs.verbose }}
