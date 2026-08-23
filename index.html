@@ -195,6 +195,8 @@ h2 span{color:var(--oro);font-style:italic}
 .blurb{font-size:13.5px;color:var(--nebbia);margin:9px 8px 0;font-style:italic}
 .why{font-size:12px;color:var(--nebbia);margin:8px 8px 0}
 .gfnote{color:var(--menta);font-size:12.5px;line-height:1.45}
+.gfcerca{display:block;text-align:center;margin:10px 0 2px;color:var(--nebbia);font-size:12.5px;text-decoration:none}
+.gfcerca:hover{color:var(--menta)}
 
 /* ---------- Riflettore (la scheda del locale) ---------- */
 #spot{position:fixed;inset:0;z-index:70;display:none;align-items:center;justify-content:center;padding:18px}
@@ -1487,6 +1489,9 @@ function renderSpot(){
       (r.blurb ? '<p class="blurb">' + esc(r.blurb) + '</p>' : '') +
       (x.why && x.why.length ? '<div class="why">' + x.why.map(esc).join(' · ') + '</div>' : '') +
       (r.gfNote ? '<div class="why gfnote">' + esc(r.gfNote) + '</div>' : '') +
+      (!(r.gf===1 || r.gf===2) ? '<a class="gfcerca" target="_blank" rel="noopener" href="' +
+        esc('https://www.google.com/search?q=' + enc(r.n + ' ' + r.t + ' senza glutine')) +
+        '">Cerca opzioni senza glutine ›</a>' : '') +
       spotActionsHTML(r) +
     '</div>';
   const card = qs('#spotcard');
