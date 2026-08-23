@@ -1,0 +1,36 @@
+name: Trova i siti ufficiali
+
+on:
+  workflow_dispatch:
+    inputs:
+      da:
+        description: 'Parti dal numero'
+        required: false
+        default: '0'
+        type: string
+      quanti:
+        description: 'Quanti locali'
+        required: false
+        default: '400'
+        type: string
+
+permissions: {}
+
+jobs:
+  siti:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install Playwright
+        run: |
+          npm install --no-save playwright@1.49.1
+          npx playwright install --with-deps chromium
+      - name: Cerca i siti
+        run: node scripts/trova-siti.mjs
+        env:
+          DA: ${{ inputs.da }}
+          QUANTI: ${{ inputs.quanti }}
