@@ -47,13 +47,13 @@ const ctx = await browser.newContext({
 });
 const page = await ctx.newPage();
 
-let consensoDato = false, diagnosticato = false;
+let consensoDato = false, diagnosticato = false, erroreMostrato = false;
 async function cerca(q) {
   /* Niente selettori: la struttura di Bing cambia spesso. Leggo il testo della
      pagina ed estraggo gli indirizzi e il telefono che mostra in chiaro. */
   try {
     await page.goto('https://www.bing.com/search?q=' + encodeURIComponent(q),
-      { waitUntil: 'domcontentloaded', timeout: 22000 });
+      { waitUntil: 'domcontentloaded', timeout: 45000 });
     await page.waitForTimeout(2500);
     if (!consensoDato) {                       // Bing mostra il muro dei cookie alla prima ricerca
       for (const sel of ['#bnp_btn_accept', 'button:has-text("Accetta")', 'button:has-text("Accept")', '#bnp_btn_reject']) {
@@ -73,7 +73,10 @@ async function cerca(q) {
     while ((m = re.exec(testo)) !== null) indirizzi.push(m[0]);
     const tel = (testo.match(/\+39[\s.\-]?[0-9][0-9\s.\-]{7,16}/) || [null])[0];
     return { indirizzi, tel: tel ? tel.trim().replace(/[\s.\-]+/g, ' ') : null };
-  } catch { return { indirizzi: [], tel: null }; }
+  } catch (e) {
+    if (!erroreMostrato) { erroreMostrato = true; console.log('    [errore ricerca] ' + String(e && e.message || e).slice(0, 200)); }
+    return { indirizzi: [], tel: null };
+  }
 }
 
 const tutti = (await listLocali()).filter(d => !gb(d.f, 'deleted') && (!gs(d.f, 'website') || !gs(d.f, 'phone')));
