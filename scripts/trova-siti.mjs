@@ -48,58 +48,69 @@ const ctx = await browser.newContext({
 const page = await ctx.newPage();
 
 async function cerca(q) {
+  /* Niente selettori: la struttura di Bing cambia spesso. Leggo il testo della
+     pagina ed estraggo gli indirizzi e il telefono che mostra in chiaro. */
   try {
     await page.goto('https://www.bing.com/search?setlang=it&cc=IT&q=' + encodeURIComponent(q),
       { waitUntil: 'domcontentloaded', timeout: 20000 });
-    await page.waitForTimeout(900);
-    return await page.evaluate(() => {
-      const out = [];
-      document.querySelectorAll('li.b_algo').forEach(function (li) {
-        const cite = li.querySelector('cite');                 // l'indirizzo mostrato in chiaro
-        const h2 = li.querySelector('h2');
-        if (cite && cite.innerText) out.push({ cite: cite.innerText.trim(), titolo: h2 ? h2.innerText : '' });
-      });
-      return out.slice(0, 8);
-    });
-  } catch { return []; }
+    await page.waitForTimeout(1000);
+    const testo = await page.evaluate(() => document.body ? document.body.innerText : '');
+    const indirizzi = [];
+    const re = /https?:\/\/[^\s"'<>)\]]+/gi;
+    let m;
+    while ((m = re.exec(testo)) !== null) indirizzi.push(m[0]);
+    const tel = (testo.match(/\+39[\s.\-]?[0-9][0-9\s.\-]{7,16}/) || [null])[0];
+    return { indirizzi, tel: tel ? tel.trim().replace(/[\s.\-]+/g, ' ') : null };
+  } catch { return { indirizzi: [], tel: null }; }
 }
 
-const tutti = (await listLocali()).filter(d => !gb(d.f, 'deleted') && !gs(d.f, 'website'));
+const tutti = (await listLocali()).filter(d => !gb(d.f, 'deleted') && (!gs(d.f, 'website') || !gs(d.f, 'phone')));
 const lista = tutti.slice(DA, DA + QUANTI);
-console.log(`Locali senza sito da cercare: ${lista.length}\n`);
+console.log(`Locali da completare (sito o telefono): ${lista.length}\n`);
 
-let trovati = 0, nulla = 0;
+let trovati = 0, nulla = 0, telefoni = 0;
 for (const d of lista) {
   const nome = gs(d.f, 'n') || d.id;
   const comune = (gs(d.f, 't') || '').split('(')[0].trim();
   const parole = nome.split(/[^A-Za-zÀ-ú0-9]+/).filter(w => w.length > 2).map(semplifica);
   let scelto = null;
 
+  let telTrovato = null;
   for (const q of [`${nome} ${comune} sito ufficiale`, `${nome} pizzeria ${comune}`]) {
     const res = await cerca(q);
-    for (const r of res) {
-      let host = r.cite.replace(/^https?:\/\//i, '').split(/[\/\s›]/)[0].toLowerCase();
-      if (!host || !host.includes('.') || VIETATI.test(host)) continue;
+    if (!telTrovato && res.tel) telTrovato = res.tel;
+    for (const ind of res.indirizzi) {
+      let host = '';
+      try { host = new URL(ind).hostname.toLowerCase(); } catch { continue; }
+      if (!host.includes('.') || VIETATI.test(host)) continue;
+      if (host.startsWith('xn--')) continue;                    // versione punycode: preferisco quella leggibile
       const hs = semplifica(host);
-      // il dominio deve richiamare il nome del locale (o il nome richiamare il dominio)
       const somiglia = parole.some(w => w.length > 3 && hs.includes(w)) ||
-                       (parole.length && hs.includes(parole.join('')));
-      if (somiglia) { scelto = 'https://' + host.replace(/^www\./, 'www.'); break; }
+                       (parole.length > 1 && hs.includes(parole.join('')));
+      if (somiglia) { scelto = 'https://' + host; break; }
     }
     if (scelto) break;
   }
 
   if (scelto) {
     try {
-      await patchDoc(d.id, { website: { stringValue: scelto }, updatedAt: { integerValue: String(Date.now()) } });
-      console.log(`✓ ${nome} (${comune}) → ${scelto}`);
+      const agg = { website: { stringValue: scelto }, updatedAt: { integerValue: String(Date.now()) } };
+      if (telTrovato && !gs(d.f, 'phone')) { agg.phone = { stringValue: telTrovato }; telefoni++; }
+      await patchDoc(d.id, agg);
+      console.log(`✓ ${nome} (${comune}) → ${scelto}${telTrovato ? ' · ' + telTrovato : ''}`);
       trovati++;
     } catch (e) { console.log(`✗ ${nome}: ${String(e.message).slice(0, 60)}`); }
   } else {
-    console.log(`· ${nome} (${comune}) — nessun sito riconoscibile`);
+    if (telTrovato && !gs(d.f, 'phone')) {
+      try {
+        await patchDoc(d.id, { phone: { stringValue: telTrovato }, updatedAt: { integerValue: String(Date.now()) } });
+        telefoni++;
+        console.log(`· ${nome} (${comune}) — niente sito, ma telefono ${telTrovato}`);
+      } catch {}
+    } else console.log(`· ${nome} (${comune}) — nessun sito riconoscibile`);
     nulla++;
   }
   await new Promise(r => setTimeout(r, 700));
 }
 await browser.close();
-console.log(`\nRisultato: ${trovati} siti ufficiali trovati · ${nulla} senza esito.`);
+console.log(`\nRisultato: ${trovati} siti ufficiali · ${telefoni} telefoni · ${nulla} senza sito.`);
