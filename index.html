@@ -194,6 +194,7 @@ h2 span{color:var(--oro);font-style:italic}
 .tag.gf{background:rgba(99,211,160,.10);border-color:rgba(99,211,160,.35);color:var(--menta)}
 .blurb{font-size:13.5px;color:var(--nebbia);margin:9px 8px 0;font-style:italic}
 .why{font-size:12px;color:var(--nebbia);margin:8px 8px 0}
+.gfnote{color:var(--menta);font-size:12.5px;line-height:1.45}
 
 /* ---------- Riflettore (la scheda del locale) ---------- */
 #spot{position:fixed;inset:0;z-index:70;display:none;align-items:center;justify-content:center;padding:18px}
@@ -659,6 +660,14 @@ footer{color:rgba(169,176,196,.5);font-size:10px;text-align:center;padding:20px 
         <button type="button" class="rm" data-act="ed-rmphoto" aria-label="Rimuovi foto">✕</button>
       </div>
     </div>
+    <div class="field"><label>Opzioni senza glutine</label>
+      <select id="ed-gf">
+        <option value="0">Non risulta / non lo so</option>
+        <option value="1">Sì, il locale le offre</option>
+        <option value="2">Segnalate, da confermare</option>
+      </select>
+    </div>
+    <div class="field"><label>Nota sul senza glutine</label><input id="ed-gfnote" placeholder="es. impasto senza glutine su prenotazione"></div>
     <div class="field"><label>Sito web</label><input id="ed-web" placeholder="https://…"></div>
     <div class="mrow">
       <div class="field"><label>Telefono</label><input id="ed-phone" inputmode="tel" placeholder="+39 …"></div>
@@ -948,7 +957,8 @@ function updateAnsPills(){
     '<button class="anspill" data-act="wiz-open" data-step="0"><em>Cosa</em> ' + esc(ansLabel('type')) + '</button>' +
     '<button class="anspill" data-act="wiz-open" data-step="1"><em>Budget</em> ' + esc(ansLabel('budget')) + '</button>' +
     '<button class="anspill" data-act="wiz-open" data-step="2"><em>Zona</em> ' + esc(ansLabel('zone')) + '</button>' +
-    '<button class="anspill tgl2' + (S.ans.openNow ? ' on' : '') + '" data-act="wiz-tglopen" aria-pressed="' + (S.ans.openNow?'true':'false') + '"><span>Solo aperti stasera</span></button>';
+    '<button class="anspill tgl2' + (S.ans.openNow ? ' on' : '') + '" data-act="wiz-tglopen" aria-pressed="' + (S.ans.openNow?'true':'false') + '"><span>Solo aperti stasera</span></button>' +
+    '<button class="anspill tgl2' + (S.ans.gfOnly ? ' on' : '') + '" data-act="wiz-tglgf" aria-pressed="' + (S.ans.gfOnly?'true':'false') + '"><span>Senza glutine</span></button>';
 }
 function zoneOpts(){
   /* primo livello: Ovunque + le regioni che hanno locali (le altre in fondo).
@@ -1141,6 +1151,8 @@ function toFsFields(r){
     photo:(r.photo && r.photo.length < 900000) ? sv(r.photo) : {nullValue:null},
     photoUrl:sv(r.photoUrl),
     addedBy:sv(r.addedBy),
+    gf:{integerValue:String(r.gf||0)},
+    gfNote:sv(r.gfNote),
     createdAt:{integerValue:String(r.createdAt||0)},
     updatedAt:{integerValue:String(r.updatedAt||0)},
     deleted:{booleanValue:!!r.deleted}
@@ -1158,6 +1170,8 @@ function fromFsDoc(doc){
     website: gs('website'), phone: gs('phone'), booking: gs('booking'), blurb: gs('blurb'), photo: gs('photo'),
     photoUrl: gs('photoUrl'),
     addedBy: gs('addedBy'),
+    gf: parseInt((f.gf&&f.gf.integerValue)||'0',10)||0,
+    gfNote: gs('gfNote'),
     createdAt: parseInt((f.createdAt&&f.createdAt.integerValue)||'0',10)||0,
     updatedAt: parseInt((f.updatedAt&&f.updatedAt.integerValue)||'0',10)||0,
     deleted: !!(f.deleted && f.deleted.booleanValue)
@@ -1363,6 +1377,7 @@ function scoreRestaurant(r, a){
     else if(d===1){ s += 8; }
     else { s -= 6; why.push('fuori budget'); }
   } else { s += 10; }
+  if(a.gfOnly && !(r.gf === 1 || r.gf === 2)) return null;   // solo locali con opzioni senza glutine
   if(a.zone !== 'any'){
     if(!zonaCorrisponde(r, a.zone)) return null;   // zona scelta = solo quella zona
     s += 22; why.push('nella zona giusta');
@@ -1408,6 +1423,7 @@ function updateBoard(){
   parts.push(BUDGET_LABEL[a.budget]);
   parts.push(a.zone==='any' ? 'ovunque' : etichettaZona(a.zone));
   if(a.openNow) parts.push('aperti stasera');
+  if(a.gfOnly) parts.push('senza glutine');
   qs('#boardline').textContent = parts.join(' · ');
   updateAnsPills();
 }
@@ -1587,7 +1603,8 @@ function archFiltered(){
   const q = ((qEl && qEl.value) || '').toLowerCase().trim();
   return activeDb().filter(function(r){
     if(!q) return true;
-    return (r.n + ' ' + r.t + ' ' + r.z + ' ' + r.ty.join(' ')).toLowerCase().indexOf(q) > -1;
+    const gfTxt = (r.gf===1 || r.gf===2) ? ' senza glutine gluten free celiaci ' : '';
+    return (r.n + ' ' + r.t + ' ' + r.z + ' ' + r.ty.join(' ') + gfTxt + ' ' + (r.gfNote||'')).toLowerCase().indexOf(q) > -1;
   });
 }
 function renderList(){
@@ -1936,6 +1953,8 @@ function openEdit(rid){
   zsel.value = zval;
   qs('#ed-price').value = r ? String(r.p||2) : '2';
   qs('#ed-web').value = r && r.website ? r.website : '';
+  qs('#ed-gf').value = String((r && r.gf) || 0);
+  qs('#ed-gfnote').value = r && r.gfNote ? r.gfNote : '';
   qs('#ed-phone').value = r && r.phone ? r.phone : '';
   qs('#ed-book').value = r && r.booking ? r.booking : '';
   S.edTypes = r ? r.ty.slice() : ['Ristorante'];
@@ -1950,6 +1969,7 @@ function saveEdit(){
   if(!name){ toast('Manca il nome del locale'); return; }
   const data = {
     n:name, t:qs('#ed-town').value.trim() || '—', z:qs('#ed-zone').value,
+    gf: parseInt(qs('#ed-gf').value,10)||0, gfNote: qs('#ed-gfnote').value.trim() || null,
     ty: S.edTypes.length ? S.edTypes.slice() : ['Ristorante'],
     p: parseInt(qs('#ed-price').value,10) || 2,
     closed: S.edClosed.slice(),
@@ -2278,6 +2298,7 @@ document.addEventListener('click', function(e){
       break;
     }
     case 'wiz-tglopen': S.ans.openNow = !S.ans.openNow; updateBoard(); break;
+    case 'wiz-tglgf': S.ans.gfOnly = !S.ans.gfOnly; updateBoard(); break;
     case 'find': runFind(); break;
     case 'reroll': runFind(); break;
     case 'showall': S.showAll = true; renderResults(); break;

@@ -46,24 +46,60 @@ const AGGREGATORI = /tripadvisor|thefork|quandoo|deliveroo|justeat|just-eat|glov
 const GLUTINE = /senza glutine|senzaglutine|gluten[\s-]?free|glutenfree|celiac|celiach|per celiaci|aic\b|impasto senza glutine|pizza senza glutine/i;
 
 async function cercaWeb(page, q) {
-  const url = 'https://html.duckduckgo.com/html/?q=' + encodeURIComponent(q);
-  try {
-    await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 25000 });
-    await page.waitForTimeout(700);
-    return await page.evaluate(() => {
-      const out = [];
-      document.querySelectorAll('.result').forEach(function (r) {
-        const a = r.querySelector('a.result__a');
-        const sn = r.querySelector('.result__snippet');
-        if (!a) return;
-        let href = a.href || '';
-        const m = href.match(/uddg=([^&]+)/);          // DuckDuckGo incapsula il link
-        if (m) { try { href = decodeURIComponent(m[1]); } catch (e) {} }
-        out.push({ url: href, titolo: a.innerText || '', testo: (sn ? sn.innerText : '') });
-      });
-      return out.slice(0, 8);
-    });
-  } catch { return []; }
+  /* più motori in fila: dai datacenter alcuni rispondono con una schermata di
+     controllo, quindi si prova finché uno non restituisce risultati veri */
+  const motori = [
+    { url: 'https://lite.duckduckgo.com/lite/?q=', parse: () => {
+        const out = [];
+        document.querySelectorAll('a.result-link').forEach(function(a){
+          const tr = a.closest('tr');
+          const sn = tr && tr.parentElement ? tr.parentElement.querySelector('.result-snippet') : null;
+          out.push({ url: a.href || '', titolo: a.innerText || '', testo: sn ? sn.innerText : '' });
+        });
+        return out;
+      } },
+    { url: 'https://html.duckduckgo.com/html/?q=', parse: () => {
+        const out = [];
+        document.querySelectorAll('.result').forEach(function(r){
+          const a = r.querySelector('a.result__a');
+          const sn = r.querySelector('.result__snippet');
+          if (a) out.push({ url: a.href || '', titolo: a.innerText || '', testo: sn ? sn.innerText : '' });
+        });
+        return out;
+      } },
+    { url: 'https://www.bing.com/search?setlang=it&q=', parse: () => {
+        const out = [];
+        document.querySelectorAll('li.b_algo').forEach(function(li){
+          const a = li.querySelector('h2 a');
+          const p = li.querySelector('.b_caption p, .b_algoSlug');
+          if (a) out.push({ url: a.href || '', titolo: a.innerText || '', testo: p ? p.innerText : '' });
+        });
+        return out;
+      } },
+    { url: 'https://search.brave.com/search?q=', parse: () => {
+        const out = [];
+        document.querySelectorAll('#results .snippet').forEach(function(r){
+          const a = r.querySelector('a[href^="http"]');
+          if (a) out.push({ url: a.href || '', titolo: a.innerText || '', testo: r.innerText || '' });
+        });
+        return out;
+      } }
+  ];
+  for (const m of motori) {
+    try {
+      await page.goto(m.url + encodeURIComponent(q), { waitUntil: 'domcontentloaded', timeout: 25000 });
+      await page.waitForTimeout(1100);
+      let res = await page.evaluate(m.parse);
+      res = (res || []).map(function(r){
+        let u = r.url || '';
+        const mm = u.match(/uddg=([^&]+)/);              // DuckDuckGo incapsula il link
+        if (mm) { try { u = decodeURIComponent(mm[1]); } catch (e) {} }
+        return { url: u, titolo: r.titolo || '', testo: r.testo || '' };
+      }).filter(function(r){ return /^https?:\/\//i.test(r.url); });
+      if (res.length) return res.slice(0, 8);
+    } catch { /* motore non disponibile: passo al prossimo */ }
+  }
+  return [];
 }
 async function testoPagina(page, url, seguiMenu) {
   try {
