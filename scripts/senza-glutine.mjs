@@ -46,7 +46,9 @@ async function patchDoc(id, fields) {
 const AGGREGATORI = /bing\.|duckduckgo|mojeek|brave\.com|ecosia|startpage|yandex|baidu|search\?|tripadvisor|thefork|quandoo|deliveroo|justeat|just-eat|glovo|ubereats|facebook|instagram|twitter|tiktok|youtube|linkedin|google\.|yelp|foursquare|wikipedia|50toppizza|gamberorosso|italiangourmet|misterdelivery|dishcovery|restaurantguru|menuonline|paginegialle|virgilio|misterdelivery|booking\.com|expedia|scattidigusto|puntarellarossa|dissapore|reddit|pinterest|amazon|prenotazione|thefork/i;
 const GLUTINE = /senza glutine|senzaglutine|gluten[\s-]?free|glutenfree|celiac|celiach|per celiaci|aic\b|impasto senza glutine|pizza senza glutine/i;
 
+let motoriMorti = 0;   // dai runner i motori spesso rispondono con un blocco
 async function cercaWeb(page, q) {
+  if (motoriMorti >= 4) return [];
   /* più motori in fila: dai datacenter alcuni rispondono con una schermata di
      controllo, quindi si prova finché uno non restituisce risultati veri */
   const motori = [
@@ -97,8 +99,8 @@ async function cercaWeb(page, q) {
   ];
   for (const m of motori) {
     try {
-      await page.goto(m.url + encodeURIComponent(q), { waitUntil: 'domcontentloaded', timeout: 25000 });
-      await page.waitForTimeout(1100);
+      await page.goto(m.url + encodeURIComponent(q), { waitUntil: 'domcontentloaded', timeout: 9000 });
+      await page.waitForTimeout(600);
       let res = await page.evaluate(m.parse);
       res = (res || []).map(function(r){
         let u = r.url || '';
@@ -106,15 +108,16 @@ async function cercaWeb(page, q) {
         if (mm) { try { u = decodeURIComponent(mm[1]); } catch (e) {} }
         return { url: u, titolo: r.titolo || '', testo: r.testo || '' };
       }).filter(function(r){ return /^https?:\/\//i.test(r.url); });
-      if (res.length) return res.slice(0, 8);
+      if (res.length) { motoriMorti = 0; return res.slice(0, 8); }
     } catch { /* motore non disponibile: passo al prossimo */ }
   }
+  motoriMorti++;
   return [];
 }
 async function testoPagina(page, url, seguiMenu) {
   try {
-    await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 25000 });
-    await page.waitForTimeout(1400);
+    await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 14000 });
+    await page.waitForTimeout(900);
     for (const sel of ['#onetrust-accept-btn-handler', '.iubenda-cs-accept-btn', '.cmplz-accept',
                        'button:has-text("Accetta")', 'button:has-text("Accept")']) {
       try { const el = page.locator(sel).first(); if (await el.isVisible({ timeout: 250 })) { await el.click({ timeout: 900 }); break; } } catch {}
@@ -130,8 +133,8 @@ async function testoPagina(page, url, seguiMenu) {
     });
     if (link && /^https?:/i.test(link)) {
       try {
-        await page.goto(link, { waitUntil: 'domcontentloaded', timeout: 20000 });
-        await page.waitForTimeout(1200);
+        await page.goto(link, { waitUntil: 'domcontentloaded', timeout: 12000 });
+        await page.waitForTimeout(800);
         t += '\n' + await page.evaluate(() => document.body ? document.body.innerText : '');
       } catch {}
     }
@@ -149,11 +152,11 @@ async function osmCerca(nome, comune) {
   const esc = t => t.replace(/[.*+?^${}()|[\]\\"]/g, '\\$&');
   const paroleNome = nome.replace(/["\\]/g, ' ').trim().split(/\s+/).filter(Boolean).slice(0, 2).map(esc).join('.*');
   const citta = comune.split('(')[0].trim().replace(/["\\]/g, ' ');
-  const q = `[out:json][timeout:30];
+  const q = `[out:json][timeout:18];
     area["name"="${citta}"]["boundary"="administrative"]->.a;
     nwr["name"~"${paroleNome}",i](area.a);
     out tags 6;`;
-  for (let tent = 0; tent < 3; tent++) {
+  for (let tent = 0; tent < 2; tent++) {
     try {
       const res = await fetch('https://overpass-api.de/api/interpreter', {
         method: 'POST',
@@ -164,7 +167,7 @@ async function osmCerca(nome, comune) {
         },
         body: 'data=' + encodeURIComponent(q)
       });
-      if (res.status === 429 || res.status === 504) { await new Promise(r => setTimeout(r, 6000)); continue; }
+      if (res.status === 429 || res.status === 504) { await new Promise(r => setTimeout(r, 3000)); continue; }
       if (!res.ok) { if (VERBOSE) console.log(`    osm HTTP ${res.status} · ${nome}`); return null; }
       const d = await res.json();
       const els = d.elements || [];
@@ -248,7 +251,7 @@ for (const d of lista) {
   agg.updatedAt = { integerValue: String(Date.now()) };
   try { await patchDoc(d.id, agg); } catch (e) { console.log(`  ✗ ${nome}: ${String(e.message).slice(0, 60)}`); }
 
-  await new Promise(r => setTimeout(r, 1200));
+  await new Promise(r => setTimeout(r, 400));
   if (gf === 1) { gfSito++; console.log(`✓ ${nome} (${comune}) — dichiarato dal locale`); }
   else if (gf === 2) { gfWeb++; console.log(`~ ${nome} (${comune}) — segnalato dal web`); }
   else { nulla++; console.log(`· ${nome} (${comune}) — nessun riscontro`); }
