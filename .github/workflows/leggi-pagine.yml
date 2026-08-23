@@ -1,0 +1,35 @@
+name: Leggi pagine web
+
+on:
+  workflow_dispatch:
+    inputs:
+      urls:
+        description: 'Indirizzi separati da virgola'
+        required: true
+        type: string
+      maxchars:
+        description: 'Caratteri da stampare per pagina'
+        required: false
+        default: '60000'
+        type: string
+
+permissions: {}
+
+jobs:
+  leggi:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install Playwright
+        run: |
+          npm install --no-save playwright@1.49.1
+          npx playwright install --with-deps chromium
+      - name: Leggi le pagine
+        run: node scripts/leggi-pagine.mjs
+        env:
+          URLS: ${{ inputs.urls }}
+          MAXCHARS: ${{ inputs.maxchars }}
