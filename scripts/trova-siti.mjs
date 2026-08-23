@@ -47,14 +47,14 @@ const ctx = await browser.newContext({
 });
 const page = await ctx.newPage();
 
-let consensoDato = false;
+let consensoDato = false, diagnosticato = false;
 async function cerca(q) {
   /* Niente selettori: la struttura di Bing cambia spesso. Leggo il testo della
      pagina ed estraggo gli indirizzi e il telefono che mostra in chiaro. */
   try {
-    await page.goto('https://www.bing.com/search?setlang=it&cc=IT&q=' + encodeURIComponent(q),
+    await page.goto('https://www.bing.com/search?q=' + encodeURIComponent(q),
       { waitUntil: 'domcontentloaded', timeout: 22000 });
-    await page.waitForTimeout(1500);
+    await page.waitForTimeout(2500);
     if (!consensoDato) {                       // Bing mostra il muro dei cookie alla prima ricerca
       for (const sel of ['#bnp_btn_accept', 'button:has-text("Accetta")', 'button:has-text("Accept")', '#bnp_btn_reject']) {
         try {
@@ -66,6 +66,7 @@ async function cerca(q) {
     }
     await page.mouse.wheel(0, 900); await page.waitForTimeout(400);
     const testo = await page.evaluate(() => document.body ? document.body.innerText : '');
+    if (!diagnosticato) { diagnosticato = true; console.log('    [diagnostica] pagina di ' + testo.length + ' caratteri · inizio: ' + testo.slice(0, 160).replace(/\n/g, ' ')); }
     const indirizzi = [];
     const re = /https?:\/\/[^\s"'<>)\]]+/gi;
     let m;
