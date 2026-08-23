@@ -49,6 +49,15 @@ async function cercaWeb(page, q) {
   /* più motori in fila: dai datacenter alcuni rispondono con una schermata di
      controllo, quindi si prova finché uno non restituisce risultati veri */
   const motori = [
+    { url: 'https://www.mojeek.com/search?q=', parse: () => {
+        const out = [];
+        document.querySelectorAll('ul.results-standard li, .results li').forEach(function(li){
+          const a = li.querySelector('a.title, h2 a');
+          const p = li.querySelector('p.s, .s');
+          if (a) out.push({ url: a.href || '', titolo: a.innerText || '', testo: p ? p.innerText : '' });
+        });
+        return out;
+      } },
     { url: 'https://lite.duckduckgo.com/lite/?q=', parse: () => {
         const out = [];
         document.querySelectorAll('a.result-link').forEach(function(a){
@@ -133,6 +142,26 @@ function frase(testo) {
   return m ? m.trim().replace(/\s+/g, ' ') : null;
 }
 
+/* OpenStreetMap (dati aperti): spesso ha sito, telefono e perfino il campo
+   diet:gluten_free compilato dalla comunità. */
+async function osmCerca(nome, comune) {
+  const pulito = nome.replace(/["\\]/g, ' ').trim();
+  const q = `[out:json][timeout:25];
+    area["name"="${comune.replace(/["\\]/g, ' ').split('(')[0].trim()}"]["boundary"="administrative"]->.a;
+    nwr["name"~"${pulito.split(/\s+/).slice(0,2).join('.*')}",i](area.a);
+    out tags 5;`;
+  try {
+    const res = await fetch('https://overpass-api.de/api/interpreter', {
+      method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: 'data=' + encodeURIComponent(q)
+    });
+    if (!res.ok) return null;
+    const d = await res.json();
+    const el = (d.elements || []).find(e => e.tags && (e.tags.amenity === 'restaurant' || e.tags.amenity === 'fast_food' || e.tags.cuisine)) || (d.elements || [])[0];
+    return el ? el.tags : null;
+  } catch { return null; }
+}
+
 const browser = await chromium.launch();
 const ctx = await browser.newContext({
   viewport: { width: 1280, height: 900 }, locale: 'it-IT',
@@ -144,7 +173,7 @@ const tutti = (await listLocali()).filter(d => !gb(d.f, 'deleted'));
 const lista = tutti.filter(d => !SOLO_SENZA || gi(d.f, 'gf') === null).slice(DA, DA + QUANTI);
 console.log(`Locali da controllare: ${lista.length} (di ${tutti.length} totali)\n`);
 
-let sitiTrovati = 0, gfSito = 0, gfWeb = 0, nulla = 0;
+let sitiTrovati = 0, gfSito = 0, gfWeb = 0, nulla = 0, telefoni = 0;
 for (const d of lista) {
   const nome = gs(d.f, 'n') || d.id;
   const comune = gs(d.f, 't') || '';
@@ -163,7 +192,22 @@ for (const d of lista) {
   }
 
   let gf = 0, nota = null;
-  if (sito) {
+  const osm = await osmCerca(nome, comune);
+  if (osm) {
+    if (!sito && (osm.website || osm['contact:website'])) {
+      sito = osm.website || osm['contact:website'];
+      agg.website = { stringValue: sito }; sitiTrovati++;
+      console.log(`  sito da OpenStreetMap · ${nome}: ${sito}`);
+    }
+    if (!gs(d.f, 'phone') && (osm.phone || osm['contact:phone'])) {
+      agg.phone = { stringValue: osm.phone || osm['contact:phone'] };
+      telefoni++;
+    }
+    const dg = osm['diet:gluten_free'];
+    if (dg === 'yes' || dg === 'only') { gf = 1; nota = 'Senza glutine registrato su OpenStreetMap' + (dg === 'only' ? ' (locale interamente senza glutine)' : '') + '.'; }
+    else if (dg === 'limited') { gf = 2; nota = 'Alcune opzioni senza glutine (OpenStreetMap) — da confermare al locale.'; }
+  }
+  if (!gf && sito) {
     const t = await testoPagina(page, sito, true);
     if (GLUTINE.test(t)) { gf = 1; nota = 'Il sito ufficiale parla di senza glutine' + (frase(t) ? ': “' + frase(t) + '”' : '.'); }
   }
@@ -186,4 +230,4 @@ for (const d of lista) {
   else { nulla++; console.log(`· ${nome} (${comune}) — nessun riscontro`); }
 }
 await browser.close();
-console.log(`\nRisultato: ${gfSito} dichiarati dal locale · ${gfWeb} segnalati dal web · ${nulla} senza riscontro · ${sitiTrovati} siti ufficiali recuperati.`);
+console.log(`\nRisultato: ${gfSito} dichiarati · ${gfWeb} segnalati · ${nulla} senza riscontro · ${sitiTrovati} siti recuperati · ${telefoni} telefoni recuperati.`);
