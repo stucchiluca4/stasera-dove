@@ -47,13 +47,24 @@ const ctx = await browser.newContext({
 });
 const page = await ctx.newPage();
 
+let consensoDato = false;
 async function cerca(q) {
   /* Niente selettori: la struttura di Bing cambia spesso. Leggo il testo della
      pagina ed estraggo gli indirizzi e il telefono che mostra in chiaro. */
   try {
     await page.goto('https://www.bing.com/search?setlang=it&cc=IT&q=' + encodeURIComponent(q),
-      { waitUntil: 'domcontentloaded', timeout: 20000 });
-    await page.waitForTimeout(1000);
+      { waitUntil: 'domcontentloaded', timeout: 22000 });
+    await page.waitForTimeout(1500);
+    if (!consensoDato) {                       // Bing mostra il muro dei cookie alla prima ricerca
+      for (const sel of ['#bnp_btn_accept', 'button:has-text("Accetta")', 'button:has-text("Accept")', '#bnp_btn_reject']) {
+        try {
+          const el = page.locator(sel).first();
+          if (await el.isVisible({ timeout: 500 })) { await el.click({ timeout: 1500 }); await page.waitForTimeout(1500); break; }
+        } catch { /* assente */ }
+      }
+      consensoDato = true;
+    }
+    await page.mouse.wheel(0, 900); await page.waitForTimeout(400);
     const testo = await page.evaluate(() => document.body ? document.body.innerText : '');
     const indirizzi = [];
     const re = /https?:\/\/[^\s"'<>)\]]+/gi;
@@ -76,6 +87,7 @@ for (const d of lista) {
   let scelto = null;
 
   let telTrovato = null;
+  if (gs(d.f, 'website')) scelto = null;
   for (const q of [`${nome} ${comune} sito ufficiale`, `${nome} pizzeria ${comune}`]) {
     const res = await cerca(q);
     if (!telTrovato && res.tel) telTrovato = res.tel;
