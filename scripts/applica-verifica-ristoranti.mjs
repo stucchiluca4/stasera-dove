@@ -1,5 +1,5 @@
-/* Applica in modo ripetibile le verifiche manuali del 24/08/2026 e classifica
-   separatamente i locali con soli piatti naturalmente senza glutine.
+/* Applica in modo ripetibile le verifiche manuali del 24/08/2026.
+   Il dato senza glutine è volutamente binario: sì oppure no.
 
    Anteprima (nessuna scrittura): node scripts/applica-verifica-ristoranti.mjs
    Applica:                       node scripts/applica-verifica-ristoranti.mjs --apply
@@ -13,29 +13,11 @@ if (!API_KEY) throw new Error('Chiave Firestore non trovata in index.html');
 const BASE = 'https://firestore.googleapis.com/v1/projects/stasera-dove/databases/(default)/documents';
 const APPLICA = process.env.APPLICA === '1' || process.argv.includes('--apply');
 const NATURAL_TYPES = new Set(['Ristorante', 'Carne', 'Pesce', 'Griglieria', 'Galletto']);
-const NATURAL_NOTE = 'Il menu può includere carne, pesce, riso o contorni naturalmente senza glutine. Chiedere sempre conferma su ingredienti e contaminazioni.';
 
-const GF = {
-  s2:[2,'Il menu 2025 riportava pizze no glutine; una recensione di marzo 2026 segnala che erano state sospese. Chiamare prima.'],
-  s5:[2,'Menu online: pizze, hamburger, dolci e birre senza glutine. Confermare la gestione delle contaminazioni.'],
-  s9:[1,'Il menu ufficiale riporta pizza, pane burger e fritti senza glutine.'],
-  s12:[2,'Menu modificabile senza glutine; segnalato uso condiviso delle attrezzature, quindi non adatto alla celiachia senza conferma.'],
-  s13:[2,'Opzioni senza glutine segnalate da TheFork; comunicare la celiachia in prenotazione.'],
-  s17:[2,'Il menu allergeni ufficiale include piatti senza glutine e birra GF, ma non esclude contaminazioni crociate.'],
-  s26:[2,'Opzioni senza glutine segnalate su Tripadvisor; avvisare il locale in prenotazione.'],
-  s27:[2,'Una fonte menu segnala una selezione senza glutine; da confermare al locale.'],
-  s29:[2,'Opzioni senza glutine segnalate su Apple Maps; da confermare al locale.'],
-  s35:[2,'Opzioni senza glutine segnalate da Booking e Tripadvisor; avvisare il ristorante.'],
-  s36:[2,'Piatti tipici adattabili senza glutine segnalati da una recensione dedicata; confermare le contaminazioni.'],
-  s38:[2,'Opzioni senza glutine segnalate da fonti menu; da confermare al locale.'],
-  s39:[2,'Il menu delivery identifica diversi ravioli senza glutine; chiedere conferma sulla contaminazione.'],
-  s43:[1,'Il menu ufficiale indica il senza glutine disponibile solo su prenotazione.'],
-  s45:[2,'Pizza senza glutine con impasto fresco segnalata da Gluto e Tripadvisor; confermare al locale.'],
-  s47:[2,'Il portale turistico della Val Cavallina segnala opzioni senza glutine.'],
-  s51:[2,'Pizza senza glutine segnalata da più recensioni su Gluto; confermare al locale.'],
-  s52:[2,'Impasto senza glutine e mozzarella senza lattosio segnalati da recensioni recenti; confermare al locale.'],
-  u1787053923311:[1,'Il sito ufficiale dichiara senza glutine, senza lattosio, nickel free e proposte vegane.']
-};
+const GF_YES = new Set([
+  's2','s5','s9','s12','s13','s17','s26','s27','s29','s35','s36','s38','s39',
+  's43','s45','s47','s51','s52','u1787053923311'
+]);
 
 const PHOTOS = {
   s1:'https://ciucciue.it/wp-content/uploads/2021/11/Progetto-senza-titolo-1-768x1024.png',
@@ -70,27 +52,20 @@ async function patchDoc(id, fields) {
   if (!res.ok) throw new Error(`${id}: HTTP ${res.status} ${await res.text()}`);
 }
 
-let verificati = 0, naturali = 0, foto = 0, invariati = 0;
+let senzaGlutineSi = 0, foto = 0, invariati = 0;
 for (const doc of await listLocali()) {
   const id = doc.name.split('/').pop();
   const f = doc.fields ?? {};
   if (gb(f, 'deleted')) continue;
   const patch = {};
-  if (GF[id]) {
-    const [livello, nota] = GF[id];
-    if (gi(f, 'gf') !== livello || gs(f, 'gfNote') !== nota) {
-      patch.gf = {integerValue:String(livello)};
-      patch.gfNote = {stringValue:nota};
-      verificati++;
-    }
-  } else if ((gi(f, 'gf') ?? 0) === 0) {
-    const tipi = ga(f, 'ty');
-    const etnico = tipi.includes('Cinese') || tipi.includes('Giapponese');
-    if (!etnico && tipi.some(t => NATURAL_TYPES.has(t))) {
-      patch.gf = {integerValue:'3'};
-      patch.gfNote = {stringValue:NATURAL_NOTE};
-      naturali++;
-    }
+  const livelloAttuale = gi(f, 'gf') ?? 0;
+  const tipi = ga(f, 'ty');
+  const etnico = tipi.includes('Cinese') || tipi.includes('Giapponese');
+  const haPiattiSg = !etnico && tipi.some(t => NATURAL_TYPES.has(t));
+  const rispostaSi = livelloAttuale > 0 || GF_YES.has(id) || haPiattiSg;
+  if (rispostaSi && livelloAttuale !== 1) {
+    patch.gf = {integerValue:'1'};
+    senzaGlutineSi++;
   }
   if (PHOTOS[id] && !gs(f, 'photo') && !gs(f, 'photoUrl')) {
     patch.photoUrl = {stringValue:PHOTOS[id]};
@@ -103,4 +78,4 @@ for (const doc of await listLocali()) {
   if (APPLICA) await patchDoc(id, patch);
 }
 
-console.log(`\n${APPLICA ? 'Applicati' : 'Da applicare'}: ${verificati} verifiche SG · ${naturali} alternative naturali · ${foto} foto · ${invariati} invariati.`);
+console.log(`\n${APPLICA ? 'Applicati' : 'Da applicare'}: ${senzaGlutineSi} valori senza glutine = sì · ${foto} foto · ${invariati} invariati.`);

@@ -21,7 +21,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600;1,700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<title>Stasera Dove? · V10</title>
+<title>Stasera Dove? · V11</title>
 <style>
 :root{
   /* NOTTE & ORO — palette dei mockup */
@@ -192,7 +192,7 @@ h2 span{color:var(--oro);font-style:italic}
 .tag.warn{background:rgba(240,131,124,.12);border-color:rgba(240,131,124,.4);color:var(--rosso)}
 .tag.open{background:rgba(99,211,160,.12);border-color:rgba(99,211,160,.4);color:var(--menta)}
 .tag.gf{background:rgba(99,211,160,.10);border-color:rgba(99,211,160,.35);color:var(--menta)}
-.tag.gf.possible{background:rgba(232,197,119,.10);border-color:rgba(232,197,119,.34);color:var(--oro-s)}
+.tag.gf.no{background:rgba(255,255,255,.04);border-color:var(--linea);color:var(--nebbia)}
 .blurb{font-size:13.5px;color:var(--nebbia);margin:9px 8px 0;font-style:italic;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .why{font-size:12px;color:var(--nebbia);margin:8px 8px 0}
 .gfnote{color:var(--menta);font-size:12.5px;line-height:1.45}
@@ -531,7 +531,7 @@ footer{color:rgba(169,176,196,.5);font-size:10px;text-align:center;padding:20px 
 <div id="aurora" aria-hidden="true"></div>
 
 <header>
-  <div class="stamp">BUILD V10</div>
+  <div class="stamp">BUILD V11</div>
   <div class="brand">Stasera <em>Dove?</em><small>TACCUINO DEI RISTORANTI</small></div>
   <div class="board-line" id="boardline"></div>
 </header>
@@ -604,7 +604,7 @@ footer{color:rgba(169,176,196,.5);font-size:10px;text-align:center;padding:20px 
 
 </main>
 
-<footer>STASERA DOVE? · BUILD V10 · ARCHIVIO E RECENSIONI CONDIVISI</footer>
+<footer>STASERA DOVE? · BUILD V11 · ARCHIVIO E RECENSIONI CONDIVISI</footer>
 
 <nav>
   <button class="on" data-nav="v-wizard"><b><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="square"><path d="M6 3v5M9.5 3v5M6 3v5a1.75 1.75 0 0 0 3.5 0V3M7.75 10v11"/><path d="M16.5 21V3l3.5 3.5v5L16.5 14"/></svg></b>Stasera</button>
@@ -700,13 +700,10 @@ footer{color:rgba(169,176,196,.5);font-size:10px;text-align:center;padding:20px 
     </div>
     <div class="field"><label>Opzioni senza glutine</label>
       <select id="ed-gf">
-        <option value="0">Non risulta / non lo so</option>
-        <option value="1">Dichiarato dal locale</option>
-        <option value="2">Segnalate, da confermare</option>
-        <option value="3">Piatti naturalmente SG, contaminazione da verificare</option>
+        <option value="0">No</option>
+        <option value="1">Sì</option>
       </select>
     </div>
-    <div class="field"><label>Nota sul senza glutine</label><input id="ed-gfnote" placeholder="es. impasto senza glutine su prenotazione"></div>
     <div class="field"><label>Sito web</label><input id="ed-web" placeholder="https://…"></div>
     <div class="mrow">
       <div class="field"><label>Telefono</label><input id="ed-phone" inputmode="tel" placeholder="+39 …"></div>
@@ -764,33 +761,32 @@ const BUDGET_LABEL = {0:'indifferente',1:'€ fino a 20',2:'€€ 20–40',3:'�
 const DAYS = [{v:1,l:'Lun'},{v:2,l:'Mar'},{v:3,l:'Mer'},{v:4,l:'Gio'},{v:5,l:'Ven'},{v:6,l:'Sab'},{v:0,l:'Dom'}];
 
 /* Dati verificati il 24/08/2026 su siti ufficiali, menu e fonti di recensione.
-   gf: 1 = dichiarato dal locale, 2 = segnalato da fonti web, 3 = piatti
-   naturalmente SG ma contaminazione da verificare. */
+   gf: 1 = sì, 0 = no. */
 const SEED_ENRICH = {
   s1:{photoUrl:'https://ciucciue.it/wp-content/uploads/2021/11/Progetto-senza-titolo-1-768x1024.png'},
-  s2:{gf:2,gfNote:'Il menu 2025 riportava pizze no glutine; una recensione di marzo 2026 segnala che erano state sospese. Chiamare prima.'},
-  s5:{gf:2,gfNote:'Menu online: pizze, hamburger, dolci e birre senza glutine. Confermare la gestione delle contaminazioni.'},
-  s9:{gf:1,gfNote:'Il menu ufficiale riporta pizza, pane burger e fritti senza glutine.'},
+  s2:{gf:1},
+  s5:{gf:1},
+  s9:{gf:1},
   s10:{photoUrl:'https://static.goto-where.com/6085-albums-1.jpg'},
-  s12:{gf:2,gfNote:'Menu modificabile senza glutine; segnalato uso condiviso delle attrezzature, quindi non adatto alla celiachia senza conferma.',photoUrl:'https://img3.restaurantguru.com/w550/h367/ra08-MURUMURU-CAFE-design-2025-09.jpg'},
-  s13:{gf:2,gfNote:'Opzioni senza glutine segnalate da TheFork; comunicare la celiachia in prenotazione.'},
+  s12:{gf:1,photoUrl:'https://img3.restaurantguru.com/w550/h367/ra08-MURUMURU-CAFE-design-2025-09.jpg'},
+  s13:{gf:1},
   s14:{photoUrl:'https://www.italiaatavola.net/images/contenutiarticoli/BASSI_CASA_ROMANO_sala.jpg'},
-  s17:{gf:2,gfNote:'Il menu allergeni ufficiale include piatti senza glutine e birra GF, ma non esclude contaminazioni crociate.'},
+  s17:{gf:1},
   s19:{photoUrl:'https://img02.restaurantguru.com/c210-Restaurant-La-Pizza-a-Modo-Mio-Dario-De-Santis-interior.jpg'},
-  s26:{gf:2,gfNote:'Opzioni senza glutine segnalate su Tripadvisor; avvisare il locale in prenotazione.'},
-  s27:{gf:2,gfNote:'Una fonte menu segnala una selezione senza glutine; da confermare al locale.'},
-  s29:{gf:2,gfNote:'Opzioni senza glutine segnalate su Apple Maps; da confermare al locale.'},
+  s26:{gf:1},
+  s27:{gf:1},
+  s29:{gf:1},
   s32:{photoUrl:'https://cdn.thefork.com/tf-lab/image/upload/restaurant/a9f694a5-6bbf-4fe1-a479-c169249f43b7/1e8c747b-dc9b-493c-a61d-9cbadb23277b.jpg'},
-  s35:{gf:2,gfNote:'Opzioni senza glutine segnalate da Booking e Tripadvisor; avvisare il ristorante.'},
-  s36:{gf:2,gfNote:'Piatti tipici adattabili senza glutine segnalati da una recensione dedicata; confermare le contaminazioni.'},
-  s38:{gf:2,gfNote:'Opzioni senza glutine segnalate da fonti menu; da confermare al locale.'},
-  s39:{gf:2,gfNote:'Il menu delivery identifica diversi ravioli senza glutine; chiedere conferma sulla contaminazione.',photoUrl:'https://www.italiaatavola.net/images/contenutiarticoli/bottega_8.jpg'},
-  s43:{gf:1,gfNote:'Il menu ufficiale indica il senza glutine disponibile solo su prenotazione.',photoUrl:'https://barbagrill.it/wp-content/uploads/2024/05/pranzo-di-lavoro-al-barbagrill.webp'},
+  s35:{gf:1},
+  s36:{gf:1},
+  s38:{gf:1},
+  s39:{gf:1,photoUrl:'https://www.italiaatavola.net/images/contenutiarticoli/bottega_8.jpg'},
+  s43:{gf:1,photoUrl:'https://barbagrill.it/wp-content/uploads/2024/05/pranzo-di-lavoro-al-barbagrill.webp'},
   s44:{photoUrl:'https://cdn.archilovers.com/projects/ea989c49-9815-4691-8f05-3a24c8a58999.jpg'},
-  s45:{gf:2,gfNote:'Pizza senza glutine con impasto fresco segnalata da Gluto e Tripadvisor; confermare al locale.'},
-  s47:{gf:2,gfNote:'Il portale turistico della Val Cavallina segnala opzioni senza glutine.',photoUrl:'https://invalcavallina.it/wp-content/uploads/2025/01/Alibi-2-Trescore.jpg'},
-  s51:{gf:2,gfNote:'Pizza senza glutine segnalata da più recensioni su Gluto; confermare al locale.'},
-  s52:{gf:2,gfNote:'Impasto senza glutine e mozzarella senza lattosio segnalati da recensioni recenti; confermare al locale.'}
+  s45:{gf:1},
+  s47:{gf:1,photoUrl:'https://invalcavallina.it/wp-content/uploads/2025/01/Alibi-2-Trescore.jpg'},
+  s51:{gf:1},
+  s52:{gf:1}
 };
 
 /* ---------- Seed: i 58 locali ---------- */
@@ -1432,18 +1428,7 @@ function heroPhotoFor(r){
   return ph.length ? ph[0].photo : null;
 }
 function gfLevel(r){
-  const stored = Number(r.gf) || 0;
-  if(stored >= 1 && stored <= 3) return stored;
-  const ty = Array.isArray(r.ty) ? r.ty : [];
-  if(ty.some(function(t){ return ['Carne','Pesce','Griglieria','Galletto'].indexOf(t) > -1; })) return 3;
-  if(ty.indexOf('Ristorante') > -1 && !ty.some(function(t){ return t === 'Cinese' || t === 'Giapponese'; })) return 3;
-  return 0;
-}
-function gfNoteFor(r){
-  if(r.gfNote) return r.gfNote;
-  return gfLevel(r) === 3
-    ? 'Il menu può includere carne, pesce, riso o contorni naturalmente senza glutine. Chiedere sempre conferma su ingredienti e contaminazioni.'
-    : '';
+  return Number(r.gf) > 0 ? 1 : 0;
 }
 
 /* ---------- Motore di raccomandazione ---------- */
@@ -1461,7 +1446,7 @@ function scoreRestaurant(r, a){
     else if(d===1){ s += 8; }
     else { s -= 6; why.push('fuori budget'); }
   } else { s += 10; }
-  if(a.gfOnly && gfLevel(r) === 0) return null;   // include anche piatti naturalmente SG, con avviso contaminazione
+  if(a.gfOnly && gfLevel(r) === 0) return null;
   if(a.zone !== 'any'){
     if(!zonaCorrisponde(r, a.zone)) return null;   // zona scelta = solo quella zona
     s += 22; why.push('nella zona giusta');
@@ -1571,10 +1556,6 @@ function renderSpot(){
       '<div class="tags">' + r.ty.map(function(t){ return '<span class="tag">' + esc(t) + '</span>'; }).join('') + closedTag + gfTag + (r.addedBy ? '<span class="tag">+ ' + esc(r.addedBy) + '</span>' : '') + '</div>' +
       (r.blurb ? '<p class="blurb">' + esc(r.blurb) + '</p>' : '') +
       (x.why && x.why.length ? '<div class="why">' + x.why.map(esc).join(' · ') + '</div>' : '') +
-      (gfNoteFor(r) ? '<div class="why gfnote">' + esc(gfNoteFor(r)) + '</div>' : '') +
-      (gfLevel(r) === 0 ? '<a class="gfcerca" target="_blank" rel="noopener" href="' +
-        esc('https://www.google.com/search?q=' + enc(r.n + ' ' + r.t + ' senza glutine')) +
-        '">Cerca opzioni senza glutine ›</a>' : '') +
       spotActionsHTML(r) +
     '</div>';
   const card = qs('#spotcard');
@@ -1661,11 +1642,9 @@ function cardHTML(r, opts){
   '</div>';
 }
 function gfTagHTML(r){
-  const level = gfLevel(r);
-  if(level === 1) return '<span class="tag gf">SG dichiarato</span>';
-  if(level === 2) return '<span class="tag gf">opzioni SG segnalate</span>';
-  if(level === 3) return '<span class="tag gf possible">piatti SG possibili</span>';
-  return '';
+  return gfLevel(r)
+    ? '<span class="tag gf">Senza glutine: sì</span>'
+    : '<span class="tag gf no">Senza glutine: no</span>';
 }
 function renderResults(){
   const el = qs('#results');
@@ -1698,7 +1677,7 @@ function archFiltered(){
   return activeDb().filter(function(r){
     if(!q) return true;
     const gfTxt = gfLevel(r) ? ' senza glutine gluten free celiaci ' : '';
-    return (r.n + ' ' + r.t + ' ' + r.z + ' ' + r.ty.join(' ') + gfTxt + ' ' + (r.gfNote||'')).toLowerCase().indexOf(q) > -1;
+    return (r.n + ' ' + r.t + ' ' + r.z + ' ' + r.ty.join(' ') + gfTxt).toLowerCase().indexOf(q) > -1;
   });
 }
 function renderList(){
@@ -2047,8 +2026,7 @@ function openEdit(rid){
   zsel.value = zval;
   qs('#ed-price').value = r ? String(r.p||2) : '2';
   qs('#ed-web').value = r && r.website ? r.website : '';
-  qs('#ed-gf').value = String((r && r.gf) || 0);
-  qs('#ed-gfnote').value = r && r.gfNote ? r.gfNote : '';
+  qs('#ed-gf').value = r && Number(r.gf) > 0 ? '1' : '0';
   qs('#ed-phone').value = r && r.phone ? r.phone : '';
   qs('#ed-book').value = r && r.booking ? r.booking : '';
   S.edTypes = r ? r.ty.slice() : ['Ristorante'];
@@ -2063,7 +2041,7 @@ function saveEdit(){
   if(!name){ toast('Manca il nome del locale'); return; }
   const data = {
     n:name, t:qs('#ed-town').value.trim() || '—', z:qs('#ed-zone').value,
-    gf: parseInt(qs('#ed-gf').value,10)||0, gfNote: qs('#ed-gfnote').value.trim() || null,
+    gf: parseInt(qs('#ed-gf').value,10)||0,
     ty: S.edTypes.length ? S.edTypes.slice() : ['Ristorante'],
     p: parseInt(qs('#ed-price').value,10) || 2,
     closed: S.edClosed.slice(),

@@ -4,9 +4,7 @@
    2) legge il sito ufficiale (home + eventuale pagina del menu) e cerca le
       parole del senza glutine; se il sito non dice nulla, guarda i risultati
       di ricerca (dove finiscono anche le recensioni che lo menzionano).
-   Esito salvato su ogni locale: gf = 1 (dichiarato dal locale), 2 (segnalato
-   da fonti web, da confermare), 3 (piatti naturalmente senza glutine ma
-   contaminazione da verificare), 0 (nessun riscontro) + gfNote con la fonte.
+   Esito salvato su ogni locale: gf = 1 (sì), 0 (no).
    Nessuno scraping di TripAdvisor/Google: solo siti ufficiali e risultati di
    ricerca pubblici. */
 import { chromium } from 'playwright';
@@ -196,7 +194,7 @@ const tutti = (await listLocali()).filter(d => !gb(d.f, 'deleted'));
 const lista = tutti.filter(d => !SOLO_SENZA || gi(d.f, 'gf') === null).slice(DA, DA + QUANTI);
 console.log(`Locali da controllare: ${lista.length} (di ${tutti.length} totali)\n`);
 
-let sitiTrovati = 0, gfSito = 0, gfWeb = 0, gfNaturale = 0, nulla = 0, telefoni = 0;
+let sitiTrovati = 0, gfSi = 0, gfNo = 0, telefoni = 0;
 for (const d of lista) {
   const nome = gs(d.f, 'n') || d.id;
   const comune = gs(d.f, 't') || '';
@@ -220,7 +218,7 @@ for (const d of lista) {
     }
   }
 
-  let gf = 0, nota = null;
+  let gf = 0;
   const osm = await osmCerca(nome, comune);
   if (osm) {
     if (!sito && (osm.website || osm['contact:website'])) {
@@ -233,40 +231,29 @@ for (const d of lista) {
       telefoni++;
     }
     const dg = osm['diet:gluten_free'];
-    if (dg === 'yes' || dg === 'only') { gf = 1; nota = 'Senza glutine registrato su OpenStreetMap' + (dg === 'only' ? ' (locale interamente senza glutine)' : '') + '.'; }
-    else if (dg === 'limited') { gf = 2; nota = 'Alcune opzioni senza glutine (OpenStreetMap) — da confermare al locale.'; }
+    if (dg === 'yes' || dg === 'only' || dg === 'limited') gf = 1;
   }
   if (!gf && sito) {
     const t = await testoPagina(page, sito, true);
-    if (GLUTINE.test(t)) { gf = 1; nota = 'Il sito ufficiale parla di senza glutine' + (frase(t) ? ': “' + frase(t) + '”' : '.'); }
+    if (GLUTINE.test(t)) gf = 1;
   }
   if (!gf) {
     const res = await cercaWeb(page, `"${nome}" ${comune} senza glutine`);
     const cita = res.filter(r => GLUTINE.test(r.titolo + ' ' + r.testo));
-    if (cita.length) {
-      gf = 2;
-      let dove = ''; try { dove = new URL(cita[0].url).hostname.replace(/^www\./, ''); } catch {}
-      nota = 'Senza glutine segnalato da fonti web' + (dove ? ' (' + dove + ')' : '') + ' — da confermare al locale.';
-    }
+    if (cita.length) gf = 1;
   }
   if (!gf) {
     const tipi = ga(d.f, 'ty');
     const etnico = tipi.includes('Cinese') || tipi.includes('Giapponese');
-    if (!etnico && tipi.some(t => TIPI_NATURALMENTE_SG.has(t))) {
-      gf = 3;
-      nota = 'Il menu può includere carne, pesce, riso o contorni naturalmente senza glutine. Chiedere sempre conferma su ingredienti e contaminazioni.';
-    }
+    if (!etnico && tipi.some(t => TIPI_NATURALMENTE_SG.has(t))) gf = 1;
   }
   agg.gf = { integerValue: String(gf) };
-  agg.gfNote = nota ? { stringValue: nota } : { nullValue: null };
   agg.updatedAt = { integerValue: String(Date.now()) };
   try { await patchDoc(d.id, agg); } catch (e) { console.log(`  ✗ ${nome}: ${String(e.message).slice(0, 60)}`); }
 
   await new Promise(r => setTimeout(r, 400));
-  if (gf === 1) { gfSito++; console.log(`✓ ${nome} (${comune}) — dichiarato dal locale`); }
-  else if (gf === 2) { gfWeb++; console.log(`~ ${nome} (${comune}) — segnalato dal web`); }
-  else if (gf === 3) { gfNaturale++; console.log(`≈ ${nome} (${comune}) — piatti naturalmente SG, contaminazione da verificare`); }
-  else { nulla++; console.log(`· ${nome} (${comune}) — nessun riscontro`); }
+  if (gf === 1) { gfSi++; console.log(`✓ ${nome} (${comune}) — sì`); }
+  else { gfNo++; console.log(`· ${nome} (${comune}) — no`); }
 }
 await browser.close();
-console.log(`\nRisultato: ${gfSito} dichiarati · ${gfWeb} segnalati · ${gfNaturale} con piatti SG possibili · ${nulla} senza riscontro · ${sitiTrovati} siti recuperati · ${telefoni} telefoni recuperati.`);
+console.log(`\nRisultato: ${gfSi} sì · ${gfNo} no · ${sitiTrovati} siti recuperati · ${telefoni} telefoni recuperati.`);
