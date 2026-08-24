@@ -9,6 +9,7 @@ const PROJECT = 'stasera-dove';
 const API_KEY = 'AIzaSyB-m2ee3o0HVsy2aLanPPZUgBlJNQO8qUw';
 const BASE = `https://firestore.googleapis.com/v1/projects/${PROJECT}/databases/(default)/documents`;
 const UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15';
+const BAD_IMAGE = /logo|icon|favicon|sprite|placeholder|badge|avatar|banner-cookie|whatsapp|tripadvisor|gambero[_-]?rosso/i;
 
 const gs = (f, k) => (f?.[k] && 'stringValue' in f[k]) ? f[k].stringValue : null;
 const gb = (f, k) => !!f?.[k]?.booleanValue;
@@ -72,7 +73,7 @@ function collectCandidates(html, baseUrl) {
     if (!src) continue;
     const u = abs(src, baseUrl);
     if (!u || !/\.(jpe?g|png|webp)(\?|$)/i.test(u)) continue;
-    if (/logo|icon|favicon|sprite|placeholder|badge|banner-cookie|whatsapp|tripadvisor/i.test(u)) continue;
+    if (BAD_IMAGE.test(u)) continue;
     scan.push(u);
     if (scan.length >= 8) break;
   }
@@ -104,7 +105,7 @@ async function imageInfo(url) {
 }
 async function pickImage(cands) {
   for (const u of cands.strong) {
-    if (await imageInfo(u)) return u;                      // dichiarata dal sito: basta che esista
+    if (!BAD_IMAGE.test(u) && await imageInfo(u)) return u; // anche le anteprime possono essere loghi/avatar
   }
   for (const u of cands.scan) {
     const info = await imageInfo(u);

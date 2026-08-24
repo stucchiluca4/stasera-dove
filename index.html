@@ -21,7 +21,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600;1,700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<title>Stasera Dove? · V11</title>
+<title>Stasera Dove? · V12</title>
 <style>
 :root{
   /* NOTTE & ORO — palette dei mockup */
@@ -71,23 +71,14 @@ body::before{
 @keyframes auroraDrift{from{transform:translate(0,0) scale(1)}50%{transform:translate(40vw,16vh) scale(1.25)}to{transform:translate(64vw,34vh) scale(.9)}}
 
 /* ---------- Testate ---------- */
-header{padding:calc(14px + env(safe-area-inset-top)) 20px 6px}
+header{padding:calc(16px + env(safe-area-inset-top)) 20px 8px}
 .stamp{float:right;font-size:9.5px;font-weight:700;letter-spacing:2px;color:var(--nebbia);opacity:.55;margin-top:9px}
 .brand{
   font-family:'Playfair Display',Georgia,serif;font-weight:700;font-size:31px;
   letter-spacing:-.2px;line-height:1.06;color:var(--crema);
 }
 .brand em{font-style:italic;color:var(--oro)}
-.brand small{
-  display:block;font-family:'Inter',sans-serif;font-size:9.5px;font-weight:600;
-  letter-spacing:3.4px;color:var(--nebbia);margin-top:8px;opacity:.85;
-}
-.board-line{
-  margin-top:12px;padding:9px 14px;border-radius:12px;
-  background:var(--vetro);border:1px solid var(--bordo);
-  font-size:12.5px;font-weight:500;letter-spacing:.2px;color:var(--nebbia);min-height:20px;
-}
-main{padding:10px 16px 6px;max-width:640px;margin:0 auto}
+main{padding:4px 16px 6px;max-width:640px;margin:0 auto}
 section[hidden]{display:none}
 h2{
   font-family:'Playfair Display',Georgia,serif;font-size:30px;font-weight:700;
@@ -109,18 +100,18 @@ h2 span{color:var(--oro);font-style:italic}
   font-family:'Playfair Display',Georgia,serif;font-size:38px;font-weight:700;
   letter-spacing:-.5px;line-height:1.04;color:var(--crema);
 }
-.anspills{display:flex;flex-wrap:wrap;gap:10px;margin-top:34px}
+.anspills{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:28px}
 .anspill{
-  display:inline-flex;flex-direction:column;align-items:center;gap:1px;
+  display:flex;min-width:0;width:100%;flex-direction:column;align-items:center;gap:1px;
   border:1px solid rgba(255,255,255,.14);border-radius:13px;
   background:rgba(124,158,205,.26);color:var(--crema);
-  padding:11px 16px;font-size:14px;font-weight:500;cursor:pointer;font-family:inherit;line-height:1.3;
+  padding:11px 7px;font-size:13.5px;font-weight:500;cursor:pointer;font-family:inherit;line-height:1.3;
   transition:transform .15s,border-color .2s,background .2s;
 }
-.anspill em{font-style:normal;color:rgba(245,235,216,.72);font-weight:400;font-size:13.5px}
+.anspill em{font-style:normal;color:rgba(245,235,216,.72);font-weight:400;font-size:12.5px}
 .anspill:active{transform:scale(.95)}
 .anspill.tgl2{
-  position:relative;flex-direction:row;align-items:center;gap:13px;padding:7px 18px 7px 7px;border-radius:999px;
+  position:relative;grid-column:1 / -1;justify-self:start;width:auto;flex-direction:row;align-items:center;gap:13px;padding:7px 18px 7px 7px;border-radius:999px;
   background:rgba(255,255,255,.07);font-size:15.5px;border-color:rgba(255,255,255,.10);
 }
 .anspill.tgl2::before{
@@ -503,11 +494,6 @@ nav button.dot b::after{content:"";position:absolute;top:-2px;right:-8px;width:8
 }
 @keyframes toastIn{from{transform:translate(-50%,10px);opacity:0}to{transform:translate(-50%,0);opacity:1}}
 #membanner{background:rgba(232,197,119,.12);border-bottom:1px solid var(--bordo-oro);color:var(--oro-s);font-size:12px;padding:9px 14px;text-align:center;font-weight:500}
-#a2hs{
-  margin:0 16px;background:var(--vetro);border:1px solid var(--bordo-oro);border-radius:14px;
-  padding:12px 14px;font-size:12.5px;line-height:1.5;color:rgba(245,235,216,.9);display:flex;gap:10px;align-items:flex-start;
-}
-#a2hs button{background:none;border:none;color:var(--nebbia);font-size:17px;cursor:pointer;font-family:inherit;padding:0 2px;line-height:1}
 .spin{display:inline-block;animation:sp 1s linear infinite}
 @keyframes sp{to{transform:rotate(360deg)}}
 .empty{color:var(--nebbia);text-align:center;padding:40px 20px;font-size:14px;line-height:1.6}
@@ -531,15 +517,9 @@ footer{color:rgba(169,176,196,.5);font-size:10px;text-align:center;padding:20px 
 <div id="aurora" aria-hidden="true"></div>
 
 <header>
-  <div class="stamp">BUILD V11</div>
-  <div class="brand">Stasera <em>Dove?</em><small>TACCUINO DEI RISTORANTI</small></div>
-  <div class="board-line" id="boardline"></div>
+  <div class="stamp">BUILD V12</div>
+  <div class="brand">Stasera <em>Dove?</em></div>
 </header>
-
-<div id="a2hs" hidden>
-  <div id="a2hs-txt" style="flex:1"></div>
-  <button data-act="a2hs-close" aria-label="Chiudi">✕</button>
-</div>
 <div id="membanner" hidden>⚠️ Archivio in sola memoria: le modifiche non verranno salvate su questo dispositivo.</div>
 
 <main>
@@ -604,7 +584,7 @@ footer{color:rgba(169,176,196,.5);font-size:10px;text-align:center;padding:20px 
 
 </main>
 
-<footer>STASERA DOVE? · BUILD V11 · ARCHIVIO E RECENSIONI CONDIVISI</footer>
+<footer>STASERA DOVE? · BUILD V12 · ARCHIVIO E RECENSIONI CONDIVISI</footer>
 
 <nav>
   <button class="on" data-nav="v-wizard"><b><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="square"><path d="M6 3v5M9.5 3v5M6 3v5a1.75 1.75 0 0 0 3.5 0V3M7.75 10v11"/><path d="M16.5 21V3l3.5 3.5v5L16.5 14"/></svg></b>Stasera</button>
@@ -739,9 +719,10 @@ footer{color:rgba(169,176,196,.5);font-size:10px;text-align:center;padding:20px 
 <script>
 'use strict';
 /* ============================================================
-   Stasera Dove? · V6 — dinner decider
+   Stasera Dove? · V12 — dinner decider
    Single-file, zero dipendenze. Persistenza: window.storage se
-   dentro Claude, altrimenti localStorage. AI attiva solo in Claude.
+   dentro Claude, altrimenti IndexedDB con migrazione da localStorage.
+   AI attiva solo in Claude.
    ============================================================ */
 
 const KEY = 'staseradove:data';
@@ -1106,24 +1087,9 @@ function coverHTML(r, cls){
    Lo sfondo segue l'ora reale: pomeriggio, tramonto, ora blu, notte fonda.
    Nessuna animazione: il cielo e' una fotografia del momento in cui apri
    l'app per decidere dove cenare. */
-/* ---------- Schermo intero ----------
-   iOS decide se una app aggiunta alla Home parte a schermo intero nel momento
-   in cui l'icona viene creata: se l'icona è vecchia resta la barra di Safari.
-   Qui lo rileviamo e spieghiamo come rifare l'icona. */
 function isStandalone(){
   return !!(window.navigator.standalone || (window.matchMedia && matchMedia('(display-mode: standalone)').matches) ||
             (window.matchMedia && matchMedia('(display-mode: fullscreen)').matches));
-}
-function checkFullscreen(){
-  const el = qs('#a2hs'); if(!el) return;
-  let hidden = false;
-  try{ hidden = window.localStorage.getItem('sd_a2hs_off') === '1'; }catch(e){}
-  if(isStandalone() || hidden){ el.hidden = true; return; }
-  const ios = /iphone|ipad|ipod/i.test(navigator.userAgent||'');
-  qs('#a2hs-txt').innerHTML = ios
-    ? '<b>Aprila a schermo intero.</b> Tocca <b>Condividi</b> → <b>Aggiungi alla schermata Home</b>. Se l\u2019icona c\u2019è già ma vedi ancora la barra di Safari, tienila premuta, elimina l\u2019icona e rifalla da qui: sparirà la barra.'
-    : '<b>Aggiungila alla schermata Home</b> dal menu del browser per aprirla a schermo intero.';
-  el.hidden = false;
 }
 function startBg(){
   const SKY_THEME = {'sky-giorno':'#2e3a66','sky-tramonto':'#232247','sky-blu':'#1c2140','sky-notte':'#131728'};
@@ -1148,10 +1114,75 @@ function startBg(){
 }
 
 /* ---------- Persistenza ---------- */
-function setupStorage(){
+const IDB_NAME = 'stasera-dove-cache';
+const IDB_STORE = 'state';
+function idbOpen(){
+  return new Promise(function(resolve,reject){
+    const req = indexedDB.open(IDB_NAME, 1);
+    req.onupgradeneeded = function(){
+      if(!req.result.objectStoreNames.contains(IDB_STORE)) req.result.createObjectStore(IDB_STORE);
+    };
+    req.onsuccess = function(){ resolve(req.result); };
+    req.onerror = function(){ reject(req.error || new Error('IndexedDB non disponibile')); };
+    req.onblocked = function(){ reject(new Error('IndexedDB bloccato')); };
+  });
+}
+function idbRead(db,key){
+  return new Promise(function(resolve,reject){
+    const req = db.transaction(IDB_STORE,'readonly').objectStore(IDB_STORE).get(key);
+    req.onsuccess = function(){ resolve(req.result == null ? null : req.result); };
+    req.onerror = function(){ reject(req.error || new Error('Lettura IndexedDB non riuscita')); };
+  });
+}
+function idbWrite(db,key,value){
+  return new Promise(function(resolve,reject){
+    const tx = db.transaction(IDB_STORE,'readwrite');
+    tx.objectStore(IDB_STORE).put(value,key);
+    tx.oncomplete = function(){ resolve(true); };
+    tx.onerror = function(){ reject(tx.error || new Error('Scrittura IndexedDB non riuscita')); };
+    tx.onabort = function(){ reject(tx.error || new Error('Scrittura IndexedDB annullata')); };
+  });
+}
+function savedStateStamp(value){
+  try{
+    const d = JSON.parse(value); if(!d || typeof d !== 'object') return -1;
+    let stamp = Number(d.seenTs) || 0;
+    (Array.isArray(d.db) ? d.db : []).forEach(function(x){ stamp = Math.max(stamp, Number(x.updatedAt)||0); });
+    (Array.isArray(d.rev) ? d.rev : []).forEach(function(x){ stamp = Math.max(stamp, Number(x.updatedAt)||0); });
+    return stamp;
+  }catch(e){ return -1; }
+}
+async function setupStorage(){
   const hasClaude = !!(window.storage && typeof window.storage.get === 'function' && typeof window.storage.set === 'function');
   if(hasClaude){ S.claudeEnv = true; S.storageOK = true; return; }
   S.claudeEnv = false;
+  if('indexedDB' in window){
+    try{
+      const db = await idbOpen();
+      window.storage = {
+        get: function(k){ return idbRead(db,k).then(function(value){ return {value:value}; }); },
+        set: function(k,v){ return idbWrite(db,k,v); }
+      };
+      const current = await window.storage.get(KEY);
+      let legacy = null;
+      try{ legacy = window.localStorage.getItem(KEY); }catch(e){}
+      if(legacy){
+        const legacyStamp = savedStateStamp(legacy);
+        const currentStamp = savedStateStamp(current && current.value);
+        const legacyWins = !current || !current.value || legacyStamp > currentStamp;
+        if(legacyWins) await window.storage.set(KEY,legacy);
+        const verified = await window.storage.get(KEY);
+        const migratedExactly = verified && verified.value === legacy;
+        const indexedCopyIsNewer = !legacyWins && currentStamp >= legacyStamp && currentStamp >= 0;
+        if(migratedExactly || indexedCopyIsNewer){
+          try{ window.localStorage.removeItem(KEY); }catch(e){}
+        }
+      }
+      S.storageOK = true;
+      if(navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(function(){});
+      return;
+    }catch(e){ /* fallback locale sotto */ }
+  }
   let lsOK = false;
   try{ window.localStorage.setItem('__sd_test','1'); window.localStorage.removeItem('__sd_test'); lsOK = true; }catch(e){ lsOK = false; }
   if(lsOK){
@@ -1172,11 +1203,11 @@ function setupStorage(){
 async function persist(){
   if(!S.storageOK) return;
   try{
-    const res = await window.storage.set(KEY, JSON.stringify({v:3, db:S.db, rev:S.rev, profile:S.profile, seenTs:S.seenTs}));
+    const res = await window.storage.set(KEY, JSON.stringify({v:4, db:S.db, rev:S.rev, profile:S.profile, seenTs:S.seenTs}));
     if(res===false) toast('⚠️ Salvataggio non riuscito');
   }catch(e){
     if(e && (e.name==='QuotaExceededError' || /quota/i.test(String(e.message||e))))
-      toast('⚠️ Spazio esaurito: rimuovi qualche foto', 4000);
+      toast('⚠️ Memoria del browser non disponibile', 4000);
     else toast('⚠️ Salvataggio non riuscito');
   }
 }
@@ -1486,14 +1517,6 @@ function runFind(){
   }
 }
 function updateBoard(){
-  const a = S.ans; const parts = [];
-  const tl = {any:'qualsiasi cosa',pizza:'pizza',risto:'ristorante',carne:'carne',pesce:'pesce',brunch:'brunch',burger:'burger',etnico:'etnico',surprise:'a sorpresa'};
-  parts.push('Stasera: ' + (tl[a.type]||a.type));
-  parts.push(BUDGET_LABEL[a.budget]);
-  parts.push(a.zone==='any' ? 'ovunque' : etichettaZona(a.zone));
-  if(a.openNow) parts.push('aperti stasera');
-  if(a.gfOnly) parts.push('senza glutine');
-  qs('#boardline').textContent = parts.join(' · ');
   updateAnsPills();
 }
 
@@ -2375,10 +2398,6 @@ document.addEventListener('click', function(e){
     case 'reroll': runFind(); break;
     case 'showall': S.showAll = true; renderResults(); break;
     case 'open-spot': openSpot(parseInt(el.dataset.idx,10)||0); break;
-    case 'a2hs-close': {
-      try{ window.localStorage.setItem('sd_a2hs_off','1'); }catch(e){}
-      qs('#a2hs').hidden = true; break;
-    }
     case 'open-arch': {
       S.spotSrc = archFiltered().map(function(r){ return {r: r, why: []}; });
       openSpot(parseInt(el.dataset.idx,10)||0);
@@ -2477,8 +2496,8 @@ document.addEventListener('error', function(e){
 
 /* ---------- Avvio ---------- */
 (async function(){
-  setupStorage();
-  startBg(); try{ checkFullscreen(); }catch(e){}
+  await setupStorage();
+  startBg();
   initSpotGestures();
   await loadData();
   renderAll();

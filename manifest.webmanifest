@@ -1,11 +1,12 @@
 {
   "name": "Stasera Dove?",
   "short_name": "Stasera Dove?",
+  "id": "/stasera-dove/",
   "description": "App per decidere dove andare a cena: archivio locali, consigli su misura, diario con foto e classifiche.",
   "lang": "it",
-  "start_url": "./",
-  "scope": "./",
-  "display": "fullscreen",
+  "start_url": "/stasera-dove/",
+  "scope": "/stasera-dove/",
+  "display": "standalone",
   "orientation": "portrait",
   "background_color": "#12172b",
   "theme_color": "#171d36",
@@ -24,8 +25,8 @@
     }
   ],
   "display_override": [
-    "fullscreen",
     "standalone",
-    "minimal-ui"
-  ]
+    "fullscreen"
+  ],
+  "prefer_related_applications": false
 }
