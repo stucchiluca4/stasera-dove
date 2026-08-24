@@ -980,23 +980,21 @@ function updateAnsPills(){
     '<button class="anspill tgl2' + (S.ans.gfOnly ? ' on' : '') + '" data-act="wiz-tglgf" aria-pressed="' + (S.ans.gfOnly?'true':'false') + '"><span>Senza glutine</span></button>';
 }
 function zoneOpts(){
-  /* primo livello: Ovunque + le regioni che hanno locali (le altre in fondo).
-     secondo livello: le province della regione aperta. */
+  /* Si mostrano solo le zone dove c'è almeno un locale: le altre compaiono da
+     sole appena qualcuno aggiunge un posto in quella provincia. */
   if(S.wizReg){
-    const provs = ITALIA[S.wizReg] || [];
-    return [['reg:' + S.wizReg, '', 'Tutta la ' + S.wizReg]].concat(
-      provs.map(function(pr){ return [pr, '', pr + (contaZona(pr) ? ' · ' + contaZona(pr) : '')]; })
-    );
+    const provs = (ITALIA[S.wizReg] || []).filter(function(pr){ return contaZona(pr) > 0; });
+    const tot = contaZona('reg:' + S.wizReg);
+    const testa = provs.length > 1 ? [['reg:' + S.wizReg, '', 'Tutta la ' + S.wizReg + ' · ' + tot]] : [];
+    return testa.concat(provs.map(function(pr){ return [pr, '', pr + ' · ' + contaZona(pr)]; }));
   }
-  const regs = Object.keys(ITALIA);
-  const conLocali = regs.filter(function(rg){ return contaZona('reg:' + rg) > 0; });
-  const senza = regs.filter(function(rg){ return contaZona('reg:' + rg) === 0; });
-  return [['any','','Ovunque']].concat(
-    conLocali.concat(senza).map(function(rg){
-      const n = contaZona('reg:' + rg);
-      return ['apri:' + rg, '', rg + (n ? ' · ' + n : '')];
-    })
-  );
+  const regs = Object.keys(ITALIA).filter(function(rg){ return contaZona('reg:' + rg) > 0; });
+  return [['any','','Ovunque']].concat(regs.map(function(rg){
+    const provs = (ITALIA[rg] || []).filter(function(pr){ return contaZona(pr) > 0; });
+    const n = contaZona('reg:' + rg);
+    // una sola provincia con locali: si sceglie direttamente, senza secondo passaggio
+    return provs.length === 1 ? [provs[0], '', rg + ' · ' + n] : ['apri:' + rg, '', rg + ' · ' + n];
+  }));
 }
 function renderWiz(){
   const st = WIZ_STEPS[S.wizStep];
