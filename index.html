@@ -744,30 +744,64 @@ const DAYS = [{v:1,l:'Lun'},{v:2,l:'Mar'},{v:3,l:'Mer'},{v:4,l:'Gio'},{v:5,l:'Ve
 /* Dati verificati il 24/08/2026 su siti ufficiali, menu e fonti di recensione.
    gf: 1 = sì, 0 = no. */
 const SEED_ENRICH = {
-  s1:{photoUrl:'https://ciucciue.it/wp-content/uploads/2021/11/Progetto-senza-titolo-1-768x1024.png'},
-  s2:{gf:1},
-  s5:{gf:1},
-  s9:{gf:1},
-  s10:{photoUrl:'https://static.goto-where.com/6085-albums-1.jpg'},
-  s12:{gf:1,photoUrl:'https://img3.restaurantguru.com/w550/h367/ra08-MURUMURU-CAFE-design-2025-09.jpg'},
-  s13:{gf:1},
-  s14:{photoUrl:'https://www.italiaatavola.net/images/contenutiarticoli/BASSI_CASA_ROMANO_sala.jpg'},
-  s17:{gf:1},
-  s19:{photoUrl:'https://img02.restaurantguru.com/c210-Restaurant-La-Pizza-a-Modo-Mio-Dario-De-Santis-interior.jpg'},
-  s26:{gf:1},
-  s27:{gf:1},
-  s29:{gf:1},
-  s32:{photoUrl:'https://cdn.thefork.com/tf-lab/image/upload/restaurant/a9f694a5-6bbf-4fe1-a479-c169249f43b7/1e8c747b-dc9b-493c-a61d-9cbadb23277b.jpg'},
-  s35:{gf:1},
-  s36:{gf:1},
-  s38:{gf:1},
-  s39:{gf:1,photoUrl:'https://www.italiaatavola.net/images/contenutiarticoli/bottega_8.jpg'},
-  s43:{gf:1,photoUrl:'https://barbagrill.it/wp-content/uploads/2024/05/pranzo-di-lavoro-al-barbagrill.webp'},
-  s44:{photoUrl:'https://cdn.archilovers.com/projects/ea989c49-9815-4691-8f05-3a24c8a58999.jpg'},
-  s45:{gf:1},
-  s47:{gf:1,photoUrl:'https://invalcavallina.it/wp-content/uploads/2025/01/Alibi-2-Trescore.jpg'},
-  s51:{gf:1},
-  s52:{gf:1}
+  s1:{phone:'+39 039 6774327',photoUrl:'https://ciucciue.it/wp-content/uploads/2021/11/Progetto-senza-titolo-1-768x1024.png'},
+  s2:{phone:'+39 039 2183500',gf:1},
+  s3:{phone:'+39 030 737098'},
+  s4:{phone:'+39 039 9008026'},
+  s5:{phone:'+39 035 0789006',gf:1},
+  s6:{phone:'+39 02 6408 9086'},
+  s7:{phone:'+39 342 145 8440'},
+  s8:{phone:'+39 02 26227300'},
+  s9:{phone:'+39 031 2494976',gf:1},
+  s10:{phone:'+39 031 224 2969',photoUrl:'https://static.goto-where.com/6085-albums-1.jpg'},
+  s11:{phone:'+39 035 3056999'},
+  s12:{phone:'+39 393 389 1058',gf:1,photoUrl:'https://img3.restaurantguru.com/w550/h367/ra08-MURUMURU-CAFE-design-2025-09.jpg'},
+  s13:{phone:'+39 035 0900208',gf:1},
+  s14:{phone:'+39 035 515135',photoUrl:'https://www.italiaatavola.net/images/contenutiarticoli/BASSI_CASA_ROMANO_sala.jpg'},
+  s15:{phone:'+39 035 0823409'},
+  s16:{phone:'+39 035 752931'},
+  s17:{phone:'+39 338 650 1723',gf:1},
+  s18:{phone:'+39 02 8286 0326'},
+  s19:{phone:'+39 0363 351797',photoUrl:'https://img02.restaurantguru.com/c210-Restaurant-La-Pizza-a-Modo-Mio-Dario-De-Santis-interior.jpg'},
+  s20:{phone:'+39 375 709 9089'},
+  s21:{phone:'+39 333 109 7460'},
+  s22:{phone:'+39 035 247911'},
+  s23:{phone:'+39 345 749 0019'},
+  s24:{phone:'+39 035 673827'},
+  s25:{phone:'+39 035 891341'},
+  s26:{phone:'+39 0363 1849877',gf:1},
+  s27:{phone:'+39 035 0294472',gf:1},
+  s28:{phone:'+39 035 792277'},
+  s29:{phone:'+39 035 243405',gf:1},
+  s30:{phone:'+39 349 413 1424'},
+  s31:{phone:'+39 030 999 5813'},
+  s32:{phone:'+39 035 986004',photoUrl:'https://cdn.thefork.com/tf-lab/image/upload/restaurant/a9f694a5-6bbf-4fe1-a479-c169249f43b7/1e8c747b-dc9b-493c-a61d-9cbadb23277b.jpg'},
+  s33:{phone:'+39 035 0400032'},
+  s34:{phone:'+39 039 512959'},
+  s35:{phone:'+39 035 808692',gf:1},
+  s36:{phone:'+39 035 261402',gf:1},
+  s37:{phone:'+39 0363 703956'},
+  s38:{phone:'+39 035 877158',gf:1},
+  s39:{phone:'+39 035 297334',gf:1,photoUrl:'https://www.italiaatavola.net/images/contenutiarticoli/bottega_8.jpg'},
+  s40:{phone:'+39 039 2293980'},
+  s41:{phone:'+39 035 004 0453'},
+  s42:{phone:'+39 035 512792'},
+  s43:{phone:'+39 342 095 1307',gf:1,photoUrl:'https://barbagrill.it/wp-content/uploads/2024/05/pranzo-di-lavoro-al-barbagrill.webp'},
+  s44:{phone:'+39 338 135 5700',photoUrl:'https://cdn.archilovers.com/projects/ea989c49-9815-4691-8f05-3a24c8a58999.jpg'},
+  s45:{phone:'+39 030 2593557',gf:1},
+  s46:{phone:'+39 344 412 5066'},
+  s47:{phone:'+39 035 941883',gf:1,photoUrl:'https://invalcavallina.it/wp-content/uploads/2025/01/Alibi-2-Trescore.jpg'},
+  s48:{phone:'+39 345 585 6732'},
+  s49:{phone:'+39 352 066 8212'},
+  s50:{phone:'+39 035 951445'},
+  s51:{phone:'+39 035 256383',gf:1},
+  s52:{phone:'+39 035 520319',gf:1},
+  s53:{phone:'+39 333 650 7272'},
+  s54:{phone:'+39 035 4364023'},
+  s55:{phone:'+39 035 510841'},
+  s56:{phone:'+39 351 373 6345'},
+  s57:{phone:'+39 02 6379 3837'},
+  s58:{phone:'+39 035 319476'}
 };
 
 /* ---------- Seed: i 58 locali ---------- */
@@ -2382,7 +2416,13 @@ document.addEventListener('click', function(e){
     case 'wiz-skip': wizAdvance(); break;
     case 'wiz-pick': {
       const st = WIZ_STEPS[S.wizStep]; const v = el.dataset.v;
-      if(v.indexOf('apri:') === 0){ S.wizReg = v.slice(5); renderWiz(); break; }
+      if(v.indexOf('apri:') === 0){
+        S.wizReg = v.slice(5);
+        S.ans.zone = 'reg:' + S.wizReg;
+        updateBoard();
+        renderWiz();
+        break;
+      }
       if(st.g==='budget') S.ans.budget = parseInt(v,10); else S.ans[st.g] = v;
       S.wizReg = null;
       qsa('#wopts .wopt').forEach(function(w){ w.classList.remove('on'); });
