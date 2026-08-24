@@ -5,7 +5,8 @@
       parole del senza glutine; se il sito non dice nulla, guarda i risultati
       di ricerca (dove finiscono anche le recensioni che lo menzionano).
    Esito salvato su ogni locale: gf = 1 (dichiarato dal locale), 2 (segnalato
-   da fonti web, da confermare), 0 (nessun riscontro) + gfNote con la fonte.
+   da fonti web, da confermare), 3 (piatti naturalmente senza glutine ma
+   contaminazione da verificare), 0 (nessun riscontro) + gfNote con la fonte.
    Nessuno scraping di TripAdvisor/Google: solo siti ufficiali e risultati di
    ricerca pubblici. */
 import { chromium } from 'playwright';
@@ -21,6 +22,7 @@ const VERBOSE = process.env.VERBOSE === '1';   // solo quelli non ancora control
 const gs = (f, k) => (f?.[k] && 'stringValue' in f[k]) ? f[k].stringValue : null;
 const gi = (f, k) => (f?.[k] && 'integerValue' in f[k]) ? parseInt(f[k].integerValue, 10) : null;
 const gb = (f, k) => !!f?.[k]?.booleanValue;
+const ga = (f, k) => (f?.[k]?.arrayValue?.values ?? []).map(v => v.stringValue).filter(Boolean);
 
 async function listLocali() {
   let out = [], token = null;
@@ -44,7 +46,8 @@ async function patchDoc(id, fields) {
 
 /* indirizzi da non salvare mai come "sito ufficiale" del locale */
 const AGGREGATORI = /bing\.|duckduckgo|mojeek|brave\.com|ecosia|startpage|yandex|baidu|search\?|tripadvisor|thefork|quandoo|deliveroo|justeat|just-eat|glovo|ubereats|facebook|instagram|twitter|tiktok|youtube|linkedin|google\.|yelp|foursquare|wikipedia|50toppizza|gamberorosso|italiangourmet|misterdelivery|dishcovery|restaurantguru|menuonline|paginegialle|virgilio|misterdelivery|booking\.com|expedia|scattidigusto|puntarellarossa|dissapore|reddit|pinterest|amazon|prenotazione|thefork/i;
-const GLUTINE = /senza glutine|senzaglutine|gluten[\s-]?free|glutenfree|celiac|celiach|per celiaci|aic\b|impasto senza glutine|pizza senza glutine/i;
+const GLUTINE = /senza glutine|senzaglutine|no[\s-]?glutine|gluten[\s-]?free|glutenfree|celiac|celiach|per celiaci|aic\b|impasto senza glutine|pizza senza glutine/i;
+const TIPI_NATURALMENTE_SG = new Set(['Ristorante', 'Carne', 'Pesce', 'Griglieria', 'Galletto']);
 
 let motoriMorti = 0;   // dai runner i motori spesso rispondono con un blocco
 async function cercaWeb(page, q) {
@@ -193,7 +196,7 @@ const tutti = (await listLocali()).filter(d => !gb(d.f, 'deleted'));
 const lista = tutti.filter(d => !SOLO_SENZA || gi(d.f, 'gf') === null).slice(DA, DA + QUANTI);
 console.log(`Locali da controllare: ${lista.length} (di ${tutti.length} totali)\n`);
 
-let sitiTrovati = 0, gfSito = 0, gfWeb = 0, nulla = 0, telefoni = 0;
+let sitiTrovati = 0, gfSito = 0, gfWeb = 0, gfNaturale = 0, nulla = 0, telefoni = 0;
 for (const d of lista) {
   const nome = gs(d.f, 'n') || d.id;
   const comune = gs(d.f, 't') || '';
@@ -246,6 +249,14 @@ for (const d of lista) {
       nota = 'Senza glutine segnalato da fonti web' + (dove ? ' (' + dove + ')' : '') + ' — da confermare al locale.';
     }
   }
+  if (!gf) {
+    const tipi = ga(d.f, 'ty');
+    const etnico = tipi.includes('Cinese') || tipi.includes('Giapponese');
+    if (!etnico && tipi.some(t => TIPI_NATURALMENTE_SG.has(t))) {
+      gf = 3;
+      nota = 'Il menu può includere carne, pesce, riso o contorni naturalmente senza glutine. Chiedere sempre conferma su ingredienti e contaminazioni.';
+    }
+  }
   agg.gf = { integerValue: String(gf) };
   agg.gfNote = nota ? { stringValue: nota } : { nullValue: null };
   agg.updatedAt = { integerValue: String(Date.now()) };
@@ -254,7 +265,8 @@ for (const d of lista) {
   await new Promise(r => setTimeout(r, 400));
   if (gf === 1) { gfSito++; console.log(`✓ ${nome} (${comune}) — dichiarato dal locale`); }
   else if (gf === 2) { gfWeb++; console.log(`~ ${nome} (${comune}) — segnalato dal web`); }
+  else if (gf === 3) { gfNaturale++; console.log(`≈ ${nome} (${comune}) — piatti naturalmente SG, contaminazione da verificare`); }
   else { nulla++; console.log(`· ${nome} (${comune}) — nessun riscontro`); }
 }
 await browser.close();
-console.log(`\nRisultato: ${gfSito} dichiarati · ${gfWeb} segnalati · ${nulla} senza riscontro · ${sitiTrovati} siti recuperati · ${telefoni} telefoni recuperati.`);
+console.log(`\nRisultato: ${gfSito} dichiarati · ${gfWeb} segnalati · ${gfNaturale} con piatti SG possibili · ${nulla} senza riscontro · ${sitiTrovati} siti recuperati · ${telefoni} telefoni recuperati.`);

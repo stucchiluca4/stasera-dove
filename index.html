@@ -21,7 +21,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600;1,700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<title>Stasera Dove? · V9</title>
+<title>Stasera Dove? · V10</title>
 <style>
 :root{
   /* NOTTE & ORO — palette dei mockup */
@@ -192,6 +192,7 @@ h2 span{color:var(--oro);font-style:italic}
 .tag.warn{background:rgba(240,131,124,.12);border-color:rgba(240,131,124,.4);color:var(--rosso)}
 .tag.open{background:rgba(99,211,160,.12);border-color:rgba(99,211,160,.4);color:var(--menta)}
 .tag.gf{background:rgba(99,211,160,.10);border-color:rgba(99,211,160,.35);color:var(--menta)}
+.tag.gf.possible{background:rgba(232,197,119,.10);border-color:rgba(232,197,119,.34);color:var(--oro-s)}
 .blurb{font-size:13.5px;color:var(--nebbia);margin:9px 8px 0;font-style:italic;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .why{font-size:12px;color:var(--nebbia);margin:8px 8px 0}
 .gfnote{color:var(--menta);font-size:12.5px;line-height:1.45}
@@ -199,28 +200,39 @@ h2 span{color:var(--oro);font-style:italic}
 .gfcerca:hover{color:var(--menta)}
 
 /* ---------- Riflettore (la scheda del locale) ---------- */
-#spot{position:fixed;inset:0;z-index:70;display:none;align-items:center;justify-content:center;padding:14px}
+#spot{position:fixed;inset:0;z-index:70;display:none;align-items:center;justify-content:center;padding:18px;isolation:isolate;background:#120f0d}
 #spot.show{display:flex}
-.spot-back{position:absolute;inset:0;background:rgba(10,10,16,.72);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}
+.spot-back{
+  position:absolute;inset:-42px;z-index:-2;cursor:pointer;
+  background-image:linear-gradient(rgba(16,13,11,.42),rgba(16,12,9,.67)),var(--spot-image,none);
+  background-size:cover;background-position:center;
+  filter:blur(30px) saturate(.82) brightness(.72);transform:scale(1.08);
+}
+.spot-back::after{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(circle at 50% 42%,transparent 16%,rgba(12,9,7,.20) 54%,rgba(8,6,5,.62) 100%);
+}
 #spotwrap{
   position:relative;width:100%;max-width:420px;
   max-height:calc(100dvh - 28px);display:flex;flex-direction:column;justify-content:center;
 }
 #spotcard{
-  background:#1b1d22;border:1px solid rgba(255,255,255,.10);border-radius:22px;
+  background:linear-gradient(180deg,rgba(27,29,32,.97),rgba(20,22,23,.98));
+  border:1px solid rgba(232,197,119,.24);border-radius:22px;
   overflow:hidden;                                   /* niente scorrimento: è un popup */
   display:flex;flex-direction:column;
-  box-shadow:0 50px 100px -34px rgba(0,0,0,1), inset 0 1px 0 rgba(255,255,255,.08);
+  box-shadow:0 52px 110px -30px rgba(0,0,0,.96),inset 0 1px 0 rgba(255,255,255,.10);
+  backdrop-filter:blur(22px) saturate(125%);-webkit-backdrop-filter:blur(22px) saturate(125%);
 }
 #spotcard.in{animation:popIn .5s cubic-bezier(.22,1.25,.36,1) both}
 @keyframes popIn{0%{transform:translateY(26px) scale(.9);opacity:0}100%{transform:none;opacity:1}}
-.hero{position:relative;height:clamp(150px,34dvh,340px);background:#22242a;flex:0 0 auto}
+.hero{position:relative;height:min(calc(100vw - 56px),44dvh,420px);background:#22242a;flex:0 0 auto}
 .hero img{width:100%;height:100%;object-fit:cover;display:block}
-.hero .shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(12,10,8,.30) 0%,rgba(12,10,8,.05) 34%,rgba(20,17,13,.86) 74%,rgba(20,17,13,.97) 100%)}
+.hero .shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(12,10,8,.18) 0%,rgba(12,10,8,.03) 34%,rgba(20,17,13,.76) 72%,rgba(20,17,13,.98) 100%)}
 .hero .hmono{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:64px;font-weight:700;color:rgba(245,235,216,.15)}
-.hero .htit{position:absolute;left:18px;right:18px;bottom:16px;text-align:center}
+.hero .htit{position:absolute;left:18px;right:18px;bottom:18px;text-align:center}
 .hero .htit h3{
-  font-family:'Playfair Display',Georgia,serif;font-size:clamp(20px,5.6vw,27px);font-weight:700;line-height:1.12;
+  font-family:'Playfair Display',Georgia,serif;font-size:clamp(23px,6.4vw,31px);font-weight:700;line-height:1.08;
   color:var(--oro);letter-spacing:-.2px;text-shadow:0 2px 16px rgba(0,0,0,.7);
 }
 .hero .htit .sub{color:rgba(245,235,216,.88);margin-top:4px;font-size:clamp(12.5px,3.6vw,14.5px)}
@@ -245,7 +257,7 @@ h2 span{color:var(--oro);font-style:italic}
   border:1px solid rgba(255,255,255,.18);background:rgba(20,17,13,.55);backdrop-filter:blur(8px);
   color:#fff;font-size:15px;cursor:pointer;
 }
-.spot-body{padding:clamp(4px,1vh,8px) 18px 4px;flex:1 1 auto;min-height:0;overflow:hidden;display:flex;flex-direction:column;justify-content:center}
+.spot-body{padding:clamp(5px,1vh,9px) 18px 11px;flex:1 1 auto;min-height:0;overflow:hidden;display:flex;flex-direction:column;justify-content:center}
 .spot-body .tags{margin-left:0;justify-content:center}
 .spot-body .blurb,.spot-body .why{margin-left:0;margin-right:0;text-align:center}
 /* riga icone: Maps · Chiama · Sito · Prenota */
@@ -270,7 +282,7 @@ h2 span{color:var(--oro);font-style:italic}
 .ab2.go{background:var(--azz);border-color:var(--azz);color:#fff;font-weight:600}
 .ab2.mini{flex:0 0 52px;font-size:16px;padding:14px 0}
 .ab2.quiet{border:1px solid var(--bordo);color:var(--nebbia);font-size:13px;padding:11px 6px;font-weight:500}
-.spot-foot{display:flex;align-items:center;justify-content:center;gap:20px;padding:clamp(8px,1.6vh,16px) 16px 4px;flex:0 0 auto}
+.spot-foot{display:flex;align-items:center;justify-content:center;gap:20px;padding:clamp(13px,2.2vh,22px) 16px 4px;flex:0 0 auto}
 .snav{
   width:38px;height:38px;border-radius:99px;border:none;background:none;
   color:var(--crema);font-size:24px;line-height:1;cursor:pointer;transition:opacity .2s;
@@ -279,6 +291,13 @@ h2 span{color:var(--oro);font-style:italic}
 #spotnav{flex:0 0 auto}
 .spot-count{font-size:15.5px;font-weight:500;letter-spacing:.4px;color:var(--crema);text-transform:none}
 .spot-all{display:block;width:100%;background:none;border:none;color:var(--nebbia);font-size:12.5px;font-weight:500;padding:2px 0 6px;cursor:pointer;font-family:inherit}
+@media (max-height:740px){
+  #spot{padding:10px 14px}
+  .hero{height:min(calc(100vw - 48px),38dvh,330px)}
+  .hero .htit{bottom:10px}.hero .htit h3{font-size:22px}
+  .spot-body .tags,.spot-body .blurb,.spot-body .why,.spot-body .gfcerca{display:none}
+  .acts{margin-top:6px}.acts2{margin-top:6px}.spot-foot{padding-top:7px}
+}
 
 /* ---------- Foglio delle domande (il rito in tre passi) ---------- */
 #m-wiz{
@@ -512,7 +531,7 @@ footer{color:rgba(169,176,196,.5);font-size:10px;text-align:center;padding:20px 
 <div id="aurora" aria-hidden="true"></div>
 
 <header>
-  <div class="stamp">BUILD V9</div>
+  <div class="stamp">BUILD V10</div>
   <div class="brand">Stasera <em>Dove?</em><small>TACCUINO DEI RISTORANTI</small></div>
   <div class="board-line" id="boardline"></div>
 </header>
@@ -585,7 +604,7 @@ footer{color:rgba(169,176,196,.5);font-size:10px;text-align:center;padding:20px 
 
 </main>
 
-<footer>STASERA DOVE? · BUILD V9 · ARCHIVIO E RECENSIONI CONDIVISI</footer>
+<footer>STASERA DOVE? · BUILD V10 · ARCHIVIO E RECENSIONI CONDIVISI</footer>
 
 <nav>
   <button class="on" data-nav="v-wizard"><b><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="square"><path d="M6 3v5M9.5 3v5M6 3v5a1.75 1.75 0 0 0 3.5 0V3M7.75 10v11"/><path d="M16.5 21V3l3.5 3.5v5L16.5 14"/></svg></b>Stasera</button>
@@ -682,8 +701,9 @@ footer{color:rgba(169,176,196,.5);font-size:10px;text-align:center;padding:20px 
     <div class="field"><label>Opzioni senza glutine</label>
       <select id="ed-gf">
         <option value="0">Non risulta / non lo so</option>
-        <option value="1">Sì, il locale le offre</option>
+        <option value="1">Dichiarato dal locale</option>
         <option value="2">Segnalate, da confermare</option>
+        <option value="3">Piatti naturalmente SG, contaminazione da verificare</option>
       </select>
     </div>
     <div class="field"><label>Nota sul senza glutine</label><input id="ed-gfnote" placeholder="es. impasto senza glutine su prenotazione"></div>
@@ -742,6 +762,36 @@ const GROUPS = {
 };
 const BUDGET_LABEL = {0:'indifferente',1:'€ fino a 20',2:'€€ 20–40',3:'€€€ 40–70',4:'€€€€ oltre 70'};
 const DAYS = [{v:1,l:'Lun'},{v:2,l:'Mar'},{v:3,l:'Mer'},{v:4,l:'Gio'},{v:5,l:'Ven'},{v:6,l:'Sab'},{v:0,l:'Dom'}];
+
+/* Dati verificati il 24/08/2026 su siti ufficiali, menu e fonti di recensione.
+   gf: 1 = dichiarato dal locale, 2 = segnalato da fonti web, 3 = piatti
+   naturalmente SG ma contaminazione da verificare. */
+const SEED_ENRICH = {
+  s1:{photoUrl:'https://ciucciue.it/wp-content/uploads/2021/11/Progetto-senza-titolo-1-768x1024.png'},
+  s2:{gf:2,gfNote:'Il menu 2025 riportava pizze no glutine; una recensione di marzo 2026 segnala che erano state sospese. Chiamare prima.'},
+  s5:{gf:2,gfNote:'Menu online: pizze, hamburger, dolci e birre senza glutine. Confermare la gestione delle contaminazioni.'},
+  s9:{gf:1,gfNote:'Il menu ufficiale riporta pizza, pane burger e fritti senza glutine.'},
+  s10:{photoUrl:'https://static.goto-where.com/6085-albums-1.jpg'},
+  s12:{gf:2,gfNote:'Menu modificabile senza glutine; segnalato uso condiviso delle attrezzature, quindi non adatto alla celiachia senza conferma.',photoUrl:'https://img3.restaurantguru.com/w550/h367/ra08-MURUMURU-CAFE-design-2025-09.jpg'},
+  s13:{gf:2,gfNote:'Opzioni senza glutine segnalate da TheFork; comunicare la celiachia in prenotazione.'},
+  s14:{photoUrl:'https://www.italiaatavola.net/images/contenutiarticoli/BASSI_CASA_ROMANO_sala.jpg'},
+  s17:{gf:2,gfNote:'Il menu allergeni ufficiale include piatti senza glutine e birra GF, ma non esclude contaminazioni crociate.'},
+  s19:{photoUrl:'https://img02.restaurantguru.com/c210-Restaurant-La-Pizza-a-Modo-Mio-Dario-De-Santis-interior.jpg'},
+  s26:{gf:2,gfNote:'Opzioni senza glutine segnalate su Tripadvisor; avvisare il locale in prenotazione.'},
+  s27:{gf:2,gfNote:'Una fonte menu segnala una selezione senza glutine; da confermare al locale.'},
+  s29:{gf:2,gfNote:'Opzioni senza glutine segnalate su Apple Maps; da confermare al locale.'},
+  s32:{photoUrl:'https://cdn.thefork.com/tf-lab/image/upload/restaurant/a9f694a5-6bbf-4fe1-a479-c169249f43b7/1e8c747b-dc9b-493c-a61d-9cbadb23277b.jpg'},
+  s35:{gf:2,gfNote:'Opzioni senza glutine segnalate da Booking e Tripadvisor; avvisare il ristorante.'},
+  s36:{gf:2,gfNote:'Piatti tipici adattabili senza glutine segnalati da una recensione dedicata; confermare le contaminazioni.'},
+  s38:{gf:2,gfNote:'Opzioni senza glutine segnalate da fonti menu; da confermare al locale.'},
+  s39:{gf:2,gfNote:'Il menu delivery identifica diversi ravioli senza glutine; chiedere conferma sulla contaminazione.',photoUrl:'https://www.italiaatavola.net/images/contenutiarticoli/bottega_8.jpg'},
+  s43:{gf:1,gfNote:'Il menu ufficiale indica il senza glutine disponibile solo su prenotazione.',photoUrl:'https://barbagrill.it/wp-content/uploads/2024/05/pranzo-di-lavoro-al-barbagrill.webp'},
+  s44:{photoUrl:'https://cdn.archilovers.com/projects/ea989c49-9815-4691-8f05-3a24c8a58999.jpg'},
+  s45:{gf:2,gfNote:'Pizza senza glutine con impasto fresco segnalata da Gluto e Tripadvisor; confermare al locale.'},
+  s47:{gf:2,gfNote:'Il portale turistico della Val Cavallina segnala opzioni senza glutine.',photoUrl:'https://invalcavallina.it/wp-content/uploads/2025/01/Alibi-2-Trescore.jpg'},
+  s51:{gf:2,gfNote:'Pizza senza glutine segnalata da più recensioni su Gluto; confermare al locale.'},
+  s52:{gf:2,gfNote:'Impasto senza glutine e mozzarella senza lattosio segnalati da recensioni recenti; confermare al locale.'}
+};
 
 /* ---------- Seed: i 58 locali ---------- */
 const SEED = [
@@ -803,7 +853,10 @@ const SEED = [
  {n:"Pinuccè",t:"Mariano Comense",z:"Como / Lecco / Adda",ty:["Pizzeria"],p:2},
  {n:"Daniel Canzian",t:"Milano (Brera)",z:"Milano",ty:["Ristorante"],p:4},
  {n:"Cresta Alta",t:"Bergamo",z:"Bergamo città",ty:["Galletto"],p:2}
-].map(function(r,i){ return Object.assign({id:'s'+(i+1),website:null,phone:null,booking:null,blurb:null,closed:[],photo:null}, r); });
+].map(function(r,i){
+  const base = Object.assign({id:'s'+(i+1),website:null,phone:null,booking:null,blurb:null,closed:[],photo:null,photoUrl:null,gf:0,gfNote:null}, r);
+  return Object.assign(base, SEED_ENRICH[base.id] || {});
+});
 
 /* ---------- Stato ---------- */
 const S = {
@@ -1378,6 +1431,20 @@ function heroPhotoFor(r){
     .sort(function(a,b){ return b.date.localeCompare(a.date); });
   return ph.length ? ph[0].photo : null;
 }
+function gfLevel(r){
+  const stored = Number(r.gf) || 0;
+  if(stored >= 1 && stored <= 3) return stored;
+  const ty = Array.isArray(r.ty) ? r.ty : [];
+  if(ty.some(function(t){ return ['Carne','Pesce','Griglieria','Galletto'].indexOf(t) > -1; })) return 3;
+  if(ty.indexOf('Ristorante') > -1 && !ty.some(function(t){ return t === 'Cinese' || t === 'Giapponese'; })) return 3;
+  return 0;
+}
+function gfNoteFor(r){
+  if(r.gfNote) return r.gfNote;
+  return gfLevel(r) === 3
+    ? 'Il menu può includere carne, pesce, riso o contorni naturalmente senza glutine. Chiedere sempre conferma su ingredienti e contaminazioni.'
+    : '';
+}
 
 /* ---------- Motore di raccomandazione ---------- */
 function scoreRestaurant(r, a){
@@ -1394,7 +1461,7 @@ function scoreRestaurant(r, a){
     else if(d===1){ s += 8; }
     else { s -= 6; why.push('fuori budget'); }
   } else { s += 10; }
-  if(a.gfOnly && !(r.gf === 1 || r.gf === 2)) return null;   // solo locali con opzioni senza glutine
+  if(a.gfOnly && gfLevel(r) === 0) return null;   // include anche piatti naturalmente SG, con avviso contaminazione
   if(a.zone !== 'any'){
     if(!zonaCorrisponde(r, a.zone)) return null;   // zona scelta = solo quella zona
     s += 22; why.push('nella zona giusta');
@@ -1483,11 +1550,12 @@ function renderSpot(){
   const gfTag = gfTagHTML(r);
   const photo = heroPhotoFor(r);
   const himg = photo || fallbackPhotoFor(r);
+  setSpotBackdrop(himg);
   const isPick = !!(S.surprisePick && S.surprisePick.r.id === r.id);
   const hero =
     '<div class="hero"' + (photo ? ' data-act="zoom-hero" style="cursor:zoom-in"' : '') + '>' +
       coverHTML(r, 'herocover') +
-      '<img class="heroimg" src="' + esc(himg) + '" alt="" loading="lazy">' +
+      '<img class="heroimg" data-fallback="' + esc(fallbackPhotoFor(r)) + '" src="' + esc(himg) + '" alt="Sala o proposta di ' + esc(r.n) + '" loading="eager">' +
       '<div class="shade"></div>' +
       (!photo ? '<button class="addph" data-act="hero-addphoto" data-id="' + r.id + '">Aggiungi foto</button>' : '') +
       (isPick ? '<div class="hdice">SCELTA CASUALE</div>' : '') +
@@ -1503,8 +1571,8 @@ function renderSpot(){
       '<div class="tags">' + r.ty.map(function(t){ return '<span class="tag">' + esc(t) + '</span>'; }).join('') + closedTag + gfTag + (r.addedBy ? '<span class="tag">+ ' + esc(r.addedBy) + '</span>' : '') + '</div>' +
       (r.blurb ? '<p class="blurb">' + esc(r.blurb) + '</p>' : '') +
       (x.why && x.why.length ? '<div class="why">' + x.why.map(esc).join(' · ') + '</div>' : '') +
-      (r.gfNote ? '<div class="why gfnote">' + esc(r.gfNote) + '</div>' : '') +
-      (!(r.gf===1 || r.gf===2) ? '<a class="gfcerca" target="_blank" rel="noopener" href="' +
+      (gfNoteFor(r) ? '<div class="why gfnote">' + esc(gfNoteFor(r)) + '</div>' : '') +
+      (gfLevel(r) === 0 ? '<a class="gfcerca" target="_blank" rel="noopener" href="' +
         esc('https://www.google.com/search?q=' + enc(r.n + ' ' + r.t + ' senza glutine')) +
         '">Cerca opzioni senza glutine ›</a>' : '') +
       spotActionsHTML(r) +
@@ -1524,6 +1592,10 @@ function renderSpot(){
       (isPick ? '<button class="btn ghost" style="margin-top:4px" data-act="reroll">Rilancia il dado</button>' : '') +
       '<button class="spot-all" data-act="spot-close">Vedi la lista completa (' + spotList().length + ')</button>';
   }
+}
+function setSpotBackdrop(src){
+  const back = qs('#spot .spot-back');
+  if(back) back.style.setProperty('--spot-image', src ? 'url(' + JSON.stringify(src) + ')' : 'none');
 }
 function spotList(){ return S.spotSrc || S.results; }
 function openSpot(idx){
@@ -1574,7 +1646,7 @@ function cardHTML(r, opts){
   const cph = heroPhotoFor(r);
   const cimg = cph || fallbackPhotoFor(r);
   const cover = '<div class="covbox has-photo">' + coverHTML(r, 'cardcover') +
-    '<img class="cardcover-img" src="' + esc(cimg) + '" alt="" loading="lazy">' +
+    '<img class="cardcover-img" data-fallback="' + esc(fallbackPhotoFor(r)) + '" src="' + esc(cimg) + '" alt="Sala o proposta di ' + esc(r.n) + '" loading="lazy">' +
     (cph ? '' : '<span class="fbnote">FOTO D\u2019AMBIENTE</span>') + '</div>';
   const meta = [esc(r.t) + (r.z ? ', ' + esc(r.z) : ''), priceHTML(r.p), (r.ty||[]).map(esc).join(', ')]
     .filter(Boolean).join(' &nbsp;|&nbsp; ');
@@ -1589,8 +1661,10 @@ function cardHTML(r, opts){
   '</div>';
 }
 function gfTagHTML(r){
-  if(r.gf === 1) return '<span class="tag gf">senza glutine</span>';
-  if(r.gf === 2) return '<span class="tag gf">opzioni senza glutine</span>';
+  const level = gfLevel(r);
+  if(level === 1) return '<span class="tag gf">SG dichiarato</span>';
+  if(level === 2) return '<span class="tag gf">opzioni SG segnalate</span>';
+  if(level === 3) return '<span class="tag gf possible">piatti SG possibili</span>';
   return '';
 }
 function renderResults(){
@@ -1623,7 +1697,7 @@ function archFiltered(){
   const q = ((qEl && qEl.value) || '').toLowerCase().trim();
   return activeDb().filter(function(r){
     if(!q) return true;
-    const gfTxt = (r.gf===1 || r.gf===2) ? ' senza glutine gluten free celiaci ' : '';
+    const gfTxt = gfLevel(r) ? ' senza glutine gluten free celiaci ' : '';
     return (r.n + ' ' + r.t + ' ' + r.z + ' ' + r.ty.join(' ') + gfTxt + ' ' + (r.gfNote||'')).toLowerCase().indexOf(q) > -1;
   });
 }
@@ -2412,7 +2486,15 @@ qs('#ed-photofile').addEventListener('change', function(e){
 /* nasconde i loghi che non caricano (locale senza favicon / offline) */
 document.addEventListener('error', function(e){
   const t = e.target;
-  if(t && t.tagName === 'IMG' && (t.classList.contains('logo') || t.classList.contains('cardcover-img') || t.classList.contains('heroimg'))) t.style.display = 'none';
+  if(!t || t.tagName !== 'IMG') return;
+  if((t.classList.contains('cardcover-img') || t.classList.contains('heroimg')) && t.dataset.fallback && t.src !== t.dataset.fallback){
+    const fallback = t.dataset.fallback;
+    t.dataset.fallback = '';
+    t.src = fallback;
+    if(t.classList.contains('heroimg')) setSpotBackdrop(fallback);
+    return;
+  }
+  if(t.classList.contains('logo') || t.classList.contains('cardcover-img') || t.classList.contains('heroimg')) t.style.display = 'none';
 }, true);
 
 /* ---------- Avvio ---------- */
