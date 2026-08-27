@@ -21,7 +21,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600;1,700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<title>Stasera Dove? · V12</title>
+<title>Stasera Dove? · V13</title>
 <style>
 :root{
   /* NOTTE & ORO — palette dei mockup */
@@ -71,13 +71,26 @@ body::before{
 @keyframes auroraDrift{from{transform:translate(0,0) scale(1)}50%{transform:translate(40vw,16vh) scale(1.25)}to{transform:translate(64vw,34vh) scale(.9)}}
 
 /* ---------- Testate ---------- */
-header{padding:calc(16px + env(safe-area-inset-top)) 20px 8px}
+header{position:relative;padding:calc(16px + env(safe-area-inset-top)) 20px 8px}
 .stamp{float:right;font-size:9.5px;font-weight:700;letter-spacing:2px;color:var(--nebbia);opacity:.55;margin-top:9px}
 .brand{
   font-family:'Playfair Display',Georgia,serif;font-weight:700;font-size:31px;
   letter-spacing:-.2px;line-height:1.06;color:var(--crema);
 }
 .brand em{font-style:italic;color:var(--oro)}
+.profile-head{
+  display:none;width:34px;height:34px;flex:0 0 34px;border:0;border-radius:999px;
+  background:#cebfef;color:#352a50;align-items:center;justify-content:center;cursor:pointer;
+}
+.profile-head svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+body.wizard-active{overflow:hidden}
+body.wizard-active header{
+  height:calc(58px + env(safe-area-inset-top));padding:calc(14px + env(safe-area-inset-top)) 22px 10px;
+  display:flex;align-items:center;justify-content:space-between;background:#12110e;
+}
+body.wizard-active .brand{font-size:24px}
+body.wizard-active .brand em,body.wizard-active .stamp{display:none}
+body.wizard-active .profile-head{display:flex}
 main{padding:4px 16px 6px;max-width:640px;margin:0 auto}
 section[hidden]{display:none}
 h2{
@@ -293,16 +306,19 @@ h2 span{color:var(--oro);font-style:italic}
 /* ---------- Foglio delle domande (il rito in tre passi) ---------- */
 #m-wiz{
   background:#1c1e22;border-color:rgba(255,255,255,.08);
-  height:auto;max-height:96dvh;overflow:hidden;                  /* mai barre di scorrimento */
-  padding:16px 18px calc(16px + env(safe-area-inset-bottom));
+  top:calc(58px + env(safe-area-inset-top));bottom:calc(69px + env(safe-area-inset-bottom));
+  height:auto;min-height:0;max-height:none;overflow:hidden;border-radius:32px 32px 0 0;
+  padding:16px 22px 14px;
 }
 #m-wiz.show{display:flex;flex-direction:column}                  /* solo da aperto */
 #m-wiz .modal-inner{display:flex;flex-direction:column;min-height:0;flex:1}
 #m-wiz h3{
   font-size:clamp(23px, 7.2vw, 38px);font-weight:800;letter-spacing:-1px;line-height:1.06;
-  font-family:'Inter',sans-serif;margin:2px 52px 14px 0;flex:0 0 auto;
+  font-family:'Inter',sans-serif;margin:2px 52px 3px 0;flex:0 0 auto;
 }
-#m-wiz .mclose{top:2px;width:36px;height:36px;background:rgba(255,255,255,.09);border-color:rgba(255,255,255,.12)}
+#m-wiz .wsub{font-size:13px;line-height:1.45;color:rgba(255,255,255,.58);margin:0 52px 12px 0;flex:0 0 auto}
+#m-wiz .wsub[hidden]{display:none}
+#m-wiz .mclose{top:0;width:36px;height:36px;background:rgba(0,0,0,.32);border-color:transparent;font-size:17px}
 .wdots{display:flex;gap:9px;justify-content:center;align-items:center;margin:0 0 clamp(8px,1.6vh,16px);flex:0 0 auto}
 .wdots i{width:9px;height:9px;border-radius:99px;background:rgba(245,235,216,.3);transition:width .3s,background .3s}
 .wdots i.on{width:30px;background:var(--crema)}
@@ -310,12 +326,25 @@ h2 span{color:var(--oro);font-style:italic}
   display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(6px,1.8vw,12px);
   flex:1 1 auto;min-height:0;align-content:stretch;
 }
-.wopts.lista{grid-template-columns:repeat(3,1fr);gap:clamp(5px,1.4vw,9px)}
-.wopts.lista .wopt{
-  padding:6px 5px;min-height:0;font-size:clamp(10.5px,2.9vw,14px);border-radius:12px;
-  animation:none;justify-content:center;line-height:1.15;
+.wopts.lista{
+  grid-template-columns:repeat(3,minmax(0,1fr));gap:clamp(5px,1.4vw,9px);
+  align-content:start;overflow-y:auto;overscroll-behavior:contain;padding:3px 0;
+  scrollbar-width:none;-ms-overflow-style:none;
 }
-.wopts.lista .wopt b{display:none}          /* righe tutte della stessa altezza */
+.wopts.lista::-webkit-scrollbar{display:none}
+.wopts.lista .wopt{
+  height:clamp(56px,8dvh,72px);padding:6px 5px;min-height:0;
+  font-size:clamp(10.5px,2.9vw,14px);border-radius:17px;
+  animation:none;justify-content:center;gap:3px;line-height:1.15;
+}
+.wopts.lista.provinces .wopt{height:clamp(84px,11.5dvh,108px)}
+.wopts.lista .wopt b{display:none}
+.wopts.lista .wopt.has-icon b{display:block;line-height:0}
+.wopts.lista .wopt.has-icon svg{width:21px;height:21px;margin-bottom:1px;stroke:var(--azz)}
+.wopts.lista .wlabel{display:block;width:100%;color:rgba(245,235,216,.94);font-weight:500;line-height:1.15;overflow-wrap:anywhere}
+.wopts.lista .wlabel.long{font-size:clamp(8.5px,2.35vw,11px)}
+.wopts.lista .wcount{display:block;color:rgba(255,255,255,.50);font-size:clamp(9px,2.4vw,12px);font-weight:400;line-height:1.1}
+.wopts.lista .wopt.on .wlabel,.wopts.lista .wopt.on .wcount{color:var(--azz-chiaro)}
 .wopt{
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:clamp(5px,1.6vh,12px);
   border:1px solid rgba(255,255,255,.07);border-radius:clamp(12px,3.4vw,17px);background:rgba(255,255,255,.045);
@@ -340,17 +369,38 @@ h2 span{color:var(--oro);font-style:italic}
 .wopts .wopt:nth-child(4){animation-delay:.09s}.wopts .wopt:nth-child(5){animation-delay:.12s}
 .wopts .wopt:nth-child(6){animation-delay:.15s}.wopts .wopt:nth-child(7){animation-delay:.18s}
 .wopts .wopt:nth-child(8){animation-delay:.21s}.wopts .wopt:nth-child(9){animation-delay:.24s}
-.wfoot{display:flex;align-items:center;gap:10px;margin-top:clamp(9px,2vh,18px);flex:0 0 auto}
+.wfoot{
+  display:flex;align-items:center;gap:10px;margin:clamp(9px,2vh,18px) -22px 0;
+  padding:14px 22px 0;border-top:1px solid rgba(255,255,255,.07);flex:0 0 auto;
+}
 .wback{
-  border:1px solid rgba(255,255,255,.16);background:transparent;color:var(--crema);border-radius:13px;
-  padding:clamp(11px,1.7vh,16px) 18px;font-size:14.5px;font-weight:500;cursor:pointer;font-family:inherit;transition:transform .15s;
+  flex:0 0 32%;border:1px solid rgba(255,255,255,.22);background:transparent;color:var(--crema);border-radius:999px;
+  padding:clamp(11px,1.7vh,16px) 12px;font-size:15px;font-weight:500;cursor:pointer;font-family:inherit;transition:transform .15s;
 }
 .wback:active{transform:scale(.96)}
 .wskip{
   flex:1;background:var(--crema);border:none;color:#1c1e22;font-size:15.5px;font-weight:600;
-  cursor:pointer;font-family:inherit;padding:clamp(12px,1.9vh,16px) 10px;border-radius:13px;transition:transform .15s;
+  cursor:pointer;font-family:inherit;padding:clamp(12px,1.9vh,16px) 10px;border-radius:999px;transition:transform .15s;
 }
+.wskip span{font-size:22px;line-height:0;margin-left:8px;vertical-align:-1px}
 .wskip:active{transform:scale(.98)}
+
+body.wizard-active #overlay{display:none}
+body.wizard-active #toast{display:none!important}
+body.wizard-active nav{background:#12110e;border-top-color:rgba(255,255,255,.07)}
+body.wizard-active nav button{text-transform:uppercase;letter-spacing:1.25px;color:#cac4ce}
+body.wizard-active nav button.on{color:var(--azz)}
+body.wizard-active nav button.on svg{stroke:var(--azz);fill:rgba(143,190,236,.12)}
+
+@media (max-height:740px){
+  #m-wiz{padding-top:10px}
+  #m-wiz h3{font-size:23px}
+  #m-wiz .wsub{margin-bottom:8px}
+  .wdots{margin-bottom:7px}
+  .wopts.lista.regions .wopt{height:56px}
+  .wopts.lista.provinces .wopt{height:76px}
+  .wfoot{padding-top:9px;margin-top:8px}
+}
 
 /* ---------- Elenco / ricerca ---------- */
 .searchbar{display:flex;gap:12px;margin-bottom:2px;align-items:stretch}
@@ -517,8 +567,11 @@ footer{color:rgba(169,176,196,.5);font-size:10px;text-align:center;padding:20px 
 <div id="aurora" aria-hidden="true"></div>
 
 <header>
-  <div class="stamp">BUILD V12</div>
+  <div class="stamp">BUILD V13</div>
   <div class="brand">Stasera <em>Dove?</em></div>
+  <button class="profile-head" data-act="open-name" aria-label="Apri il profilo">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.2"/><path d="M5.5 20v-2.1c0-3 2.9-5.2 6.5-5.2s6.5 2.2 6.5 5.2V20z"/></svg>
+  </button>
 </header>
 <div id="membanner" hidden>⚠️ Archivio in sola memoria: le modifiche non verranno salvate su questo dispositivo.</div>
 
@@ -584,10 +637,10 @@ footer{color:rgba(169,176,196,.5);font-size:10px;text-align:center;padding:20px 
 
 </main>
 
-<footer>STASERA DOVE? · BUILD V12 · ARCHIVIO E RECENSIONI CONDIVISI</footer>
+<footer>STASERA DOVE? · BUILD V13 · ARCHIVIO E RECENSIONI CONDIVISI</footer>
 
 <nav>
-  <button class="on" data-nav="v-wizard"><b><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="square"><path d="M6 3v5M9.5 3v5M6 3v5a1.75 1.75 0 0 0 3.5 0V3M7.75 10v11"/><path d="M16.5 21V3l3.5 3.5v5L16.5 14"/></svg></b>Stasera</button>
+  <button class="on" data-nav="v-wizard"><b><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8.6"/><path d="M15.4 8.6l-2 4.8-4.8 2 2-4.8z"/><path d="M12 5.6v-.9"/></svg></b>Stasera</button>
   <button data-nav="v-list"><b><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="square"><rect x="3.5" y="4" width="17" height="4"/><path d="M5.5 8v11.5h13V8"/><path d="M10 12.5h4"/></svg></b>Archivio</button>
   <button data-nav="v-feed"><b><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="square"><path d="M7 16.5v-6.25L9.5 5.5h5l2.5 4.75v6.25"/><path d="M4 16.5h16"/><path d="M10.25 20h3.5"/></svg></b>Novità</button>
   <button data-nav="v-diary"><b><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="miter"><polygon points="12 3.5 14.6 9.2 20.5 9.7 16 13.7 17.4 19.9 12 16.6 6.6 19.9 8 13.7 3.5 9.7 9.4 9.2"/></svg></b>Diario</button>
@@ -608,6 +661,7 @@ footer{color:rgba(169,176,196,.5);font-size:10px;text-align:center;padding:20px 
     <button class="mclose" data-act="close-modals" aria-label="Chiudi">✕</button>
     <div class="wdots" id="wdots" aria-hidden="true"><i></i><i></i><i></i></div>
     <h3 id="wq"></h3>
+    <p class="wsub" id="wsub" hidden></p>
     <div class="wopts" id="wopts"></div>
     <div class="wfoot">
       <button class="wback" id="wback" data-act="wiz-back">← Indietro</button>
@@ -719,7 +773,7 @@ footer{color:rgba(169,176,196,.5);font-size:10px;text-align:center;padding:20px 
 <script>
 'use strict';
 /* ============================================================
-   Stasera Dove? · V12 — dinner decider
+   Stasera Dove? · V13 — dinner decider
    Single-file, zero dipendenze. Persistenza: window.storage se
    dentro Claude, altrimenti IndexedDB con migrazione da localStorage.
    AI attiva solo in Claude.
@@ -843,7 +897,7 @@ const S = {
   disc:[], storageOK:true, claudeEnv:false,
   editingId:null, reviewRid:null, reviewEditId:null,
   mRating:0, mWho:'In due', mPhoto:null, edTypes:[], edClosed:[], edPhoto:null,
-  statYear:null, spotIdx:0, spotOpen:false,
+  statYear:null, spotIdx:0, spotOpen:false, wizReg:null,
   profile:{name:''}, seenTs:0
 };
 function myName(){ return (S.profile && S.profile.name || '').trim(); }
@@ -1013,33 +1067,67 @@ function zoneOpts(){
   /* Si mostrano solo le zone dove c'è almeno un locale: le altre compaiono da
      sole appena qualcuno aggiunge un posto in quella provincia. */
   if(S.wizReg){
-    const provs = (ITALIA[S.wizReg] || []).filter(function(pr){ return contaZona(pr) > 0; });
+    const provs = (ITALIA[S.wizReg] || []).map(function(pr){ return {name:pr,count:contaZona(pr)}; })
+      .filter(function(x){ return x.count > 0; })
+      .sort(function(a,b){ return b.count-a.count || a.name.localeCompare(b.name,'it'); });
     const tot = contaZona('reg:' + S.wizReg);
-    const testa = provs.length > 1 ? [['reg:' + S.wizReg, '', 'Tutta la ' + S.wizReg + ' · ' + tot]] : [];
-    return testa.concat(provs.map(function(pr){ return [pr, '', pr + ' · ' + contaZona(pr)]; }));
+    return [['reg:' + S.wizReg, 'any', etichettaTuttaRegione(S.wizReg), tot]].concat(
+      provs.map(function(x){ return [x.name, '', x.name, x.count]; })
+    );
   }
-  const regs = Object.keys(ITALIA).filter(function(rg){ return contaZona('reg:' + rg) > 0; });
-  return [['any','','Ovunque']].concat(regs.map(function(rg){
-    const provs = (ITALIA[rg] || []).filter(function(pr){ return contaZona(pr) > 0; });
-    const n = contaZona('reg:' + rg);
-    // una sola provincia con locali: si sceglie direttamente, senza secondo passaggio
-    return provs.length === 1 ? [provs[0], '', rg + ' · ' + n] : ['apri:' + rg, '', rg + ' · ' + n];
+  const regs = Object.keys(ITALIA).map(function(rg){ return {name:rg,count:contaZona('reg:' + rg)}; })
+    .filter(function(x){ return x.count > 0; })
+    .sort(function(a,b){ return b.count-a.count || a.name.localeCompare(b.name,'it'); });
+  return [['any','any','Ovunque','']].concat(regs.map(function(x){
+    return ['apri:' + x.name, '', etichettaRegioneBreve(x.name), x.count];
   }));
+}
+const REGIONI_BREVI = {'Emilia-Romagna':'E.-Romagna','Trentino-Alto Adige':'T.-Alto Adige'};
+const TUTTA_REGIONE = {
+  'Abruzzo':'Tutto l’Abruzzo','Basilicata':'Tutta la Basilicata','Calabria':'Tutta la Calabria',
+  'Campania':'Tutta la Campania','Emilia-Romagna':'Tutta l’Emilia-Romagna','Friuli-Venezia Giulia':'Tutto il Friuli-Venezia Giulia',
+  'Lazio':'Tutto il Lazio','Liguria':'Tutta la Liguria','Lombardia':'Tutta la Lombardia','Marche':'Tutte le Marche',
+  'Molise':'Tutto il Molise','Piemonte':'Tutto il Piemonte','Puglia':'Tutta la Puglia','Sardegna':'Tutta la Sardegna',
+  'Sicilia':'Tutta la Sicilia','Toscana':'Tutta la Toscana','Trentino-Alto Adige':'Tutto il Trentino-Alto Adige',
+  'Umbria':'Tutta l’Umbria','Valle d’Aosta':'Tutta la Valle d’Aosta','Veneto':'Tutto il Veneto'
+};
+function etichettaRegioneBreve(reg){ return REGIONI_BREVI[reg] || reg; }
+function etichettaTuttaRegione(reg){ return TUTTA_REGIONE[reg] || reg; }
+function regioneDellaRisposta(ans){
+  if(!ans || ans === 'any') return null;
+  if(ans.indexOf('reg:') === 0) return ans.slice(4);
+  if(PROV_REG[ans]) return PROV_REG[ans];
+  return ZONE_STORICHE[ans] ? ZONE_STORICHE[ans][0] : null;
+}
+function zonaSelezionata(value, current){
+  if(value.indexOf('apri:') === 0) return regioneDellaRisposta(current) === value.slice(5);
+  return String(current) === value;
 }
 function renderWiz(){
   const st = WIZ_STEPS[S.wizStep];
   qs('#wq').textContent = st.zone && S.wizReg ? S.wizReg : st.q;
+  const sub = qs('#wsub');
+  sub.hidden = !st.zone;
+  if(st.zone) sub.textContent = S.wizReg ? 'Scegli una provincia.' : 'Scegli la tua destinazione ideale.';
   const cur = st.g === 'budget' ? String(S.ans.budget) : S.ans[st.g];
   const opts = st.zone ? zoneOpts() : st.opts;
-  qs('#wopts').className = st.zone ? 'wopts lista' : 'wopts';
+  qs('#wopts').className = st.zone ? ('wopts lista ' + (S.wizReg ? 'provinces' : 'regions')) : 'wopts';
   qs('#wopts').innerHTML = opts.map(function(o){
+    const on = st.zone ? zonaSelezionata(o[0],cur) : String(cur)===o[0];
+    if(st.zone){
+      const ic = o[1] === 'any' ? '<b>' + SVG.any + '</b>' : '';
+      const long = String(o[2]).length > 18 ? ' long' : '';
+      const count = o[3] === '' ? '' : '<small class="wcount">' + esc(o[3]) + '</small>';
+      return '<button class="wopt zoneopt' + (ic ? ' has-icon' : '') + (on ? ' on' : '') + '" aria-pressed="' + (on?'true':'false') + '" data-act="wiz-pick" data-v="' + esc(o[0]) + '">' + ic + '<span class="wlabel' + long + '">' + esc(o[2]) + '</span>' + count + '</button>';
+    }
     const ic = SVG[o[0]] ? '<b>' + SVG[o[0]] + '</b>' : (o[1] ? '<i class="wbig">' + esc(o[1]) + '</i>' : '');
-    return '<button class="wopt' + (String(cur)===o[0] ? ' on' : '') + '" data-act="wiz-pick" data-v="' + esc(o[0]) + '">' + ic + '<span>' + esc(o[2]) + '</span></button>';
+    return '<button class="wopt' + (on ? ' on' : '') + '" data-act="wiz-pick" data-v="' + esc(o[0]) + '">' + ic + '<span>' + esc(o[2]) + '</span></button>';
   }).join('');
   qsa('#wdots i').forEach(function(d,i){ d.classList.toggle('on', i === S.wizStep); });
   qs('#wback').style.display = (S.wizStep === 0 && !S.wizReg) ? 'none' : 'block';
-  qs('#wback').textContent = S.wizReg ? '‹ Regioni' : 'Indietro';
-  const sk = qs('#m-wiz .wskip'); if(sk) sk.textContent = S.wizStep === 2 ? 'Consiglia →' : 'Conferma →';
+  qs('#wback').textContent = S.wizReg ? 'Regioni' : 'Indietro';
+  const sk = qs('#m-wiz .wskip');
+  if(sk) sk.innerHTML = (S.wizStep === 2 ? 'Consiglia' : 'Conferma') + ' <span aria-hidden="true">→</span>';
 }
 function wizAdvance(){
   if(S.wizStep < 2){ S.wizStep++; renderWiz(); }
@@ -1940,8 +2028,14 @@ function renderStats(){
 }
 
 /* ---------- Modali ---------- */
-function openModal(id){ qs('#overlay').classList.add('show'); qs('#'+id).classList.add('show'); }
-function closeModals(){ qs('#overlay').classList.remove('show'); qsa('.modal').forEach(function(m){ m.classList.remove('show'); }); }
+function openModal(id){
+  document.body.classList.toggle('wizard-active', id === 'm-wiz');
+  qs('#overlay').classList.add('show'); qs('#'+id).classList.add('show');
+}
+function closeModals(){
+  document.body.classList.remove('wizard-active');
+  qs('#overlay').classList.remove('show'); qsa('.modal').forEach(function(m){ m.classList.remove('show'); });
+}
 function paintStars(){ qsa('#rv-stars span').forEach(function(s){ s.classList.toggle('on', +s.dataset.star <= S.mRating); }); }
 function paintWho(){ qsa('#rv-who .chip').forEach(function(c){ c.classList.toggle('on', c.dataset.who === S.mWho); }); }
 function paintPhoto(){
@@ -2332,7 +2426,7 @@ function renderAll(){
 
 document.addEventListener('click', function(e){
   const nav = e.target.closest('[data-nav]');
-  if(nav){ showView(nav.dataset.nav); return; }
+  if(nav){ if(document.body.classList.contains('wizard-active')) closeModals(); showView(nav.dataset.nav); return; }
 
   const chip = e.target.closest('.chips[data-g] .chip');
   if(chip){
@@ -2382,7 +2476,14 @@ document.addEventListener('click', function(e){
     case 'wiz-skip': wizAdvance(); break;
     case 'wiz-pick': {
       const st = WIZ_STEPS[S.wizStep]; const v = el.dataset.v;
-      if(v.indexOf('apri:') === 0){ S.wizReg = v.slice(5); renderWiz(); break; }
+      if(st.zone){
+        if(v.indexOf('apri:') === 0){
+          S.wizReg = v.slice(5); S.ans.zone = 'reg:' + S.wizReg;
+        } else {
+          S.ans.zone = v;
+        }
+        updateBoard(); renderWiz(); break;
+      }
       if(st.g==='budget') S.ans.budget = parseInt(v,10); else S.ans[st.g] = v;
       S.wizReg = null;
       qsa('#wopts .wopt').forEach(function(w){ w.classList.remove('on'); });
@@ -2455,7 +2556,7 @@ document.addEventListener('click', function(e){
       break;
     }
     case 'toggle-push': togglePush(el); break;
-    case 'open-name': qs('#nm-name').value = myName(); openModal('m-name'); break;
+    case 'open-name': closeModals(); qs('#nm-name').value = myName(); openModal('m-name'); break;
     case 'save-name': {
       const v = qs('#nm-name').value.trim();
       if(!v){ toast('Scrivi il tuo nome 👤'); break; }
@@ -2507,7 +2608,17 @@ document.addEventListener('error', function(e){
   addEventListener('online', scheduleSync);
   document.addEventListener('visibilitychange', function(){ if(!document.hidden) scheduleSync(); });
   if('serviceWorker' in navigator && location.protocol.indexOf('http')===0){
-    try{ navigator.serviceWorker.register('sw.js'); }catch(e){}
+    try{
+      const hadController = !!navigator.serviceWorker.controller;
+      let updateReloaded = false;
+      navigator.serviceWorker.addEventListener('controllerchange', function(){
+        if(!hadController || updateReloaded) return;
+        updateReloaded = true;
+        location.reload();
+      });
+      const reg = await navigator.serviceWorker.register('sw.js?v=27', {updateViaCache:'none'});
+      await reg.update();
+    }catch(e){}
   }
 })();
 </script>

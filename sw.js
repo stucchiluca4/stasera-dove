@@ -1,7 +1,7 @@
 /* Stasera Dove? · service worker — network-first, cache fallback (offline).
    Network-first garantisce che gli aggiornamenti arrivino sempre quando c'è rete;
    offline serve l'ultima versione salvata in cache. */
-const CACHE = 'staseradove-v25';
+const CACHE = 'staseradove-v27';
 const ASSETS = [
   './', './index.html', './manifest.webmanifest',
   './icon-192.png', './icon-512.png', './apple-touch-icon.png',
@@ -31,7 +31,7 @@ self.addEventListener('fetch', function(e){
   var url = new URL(req.url);
   if(url.origin !== location.origin) return; // non toccare API esterne / Maps
   e.respondWith(
-    fetch(req).then(function(res){
+    fetch(req, {cache:req.mode === 'navigate' ? 'reload' : 'default'}).then(function(res){
       var copy = res.clone();
       caches.open(CACHE).then(function(c){ c.put(req, copy); }).catch(function(){});
       return res;
