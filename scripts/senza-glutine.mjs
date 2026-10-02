@@ -44,6 +44,17 @@ async function patchDoc(id, fields) {
 
 /* indirizzi da non salvare mai come "sito ufficiale" del locale */
 const AGGREGATORI = /bing\.|duckduckgo|mojeek|brave\.com|ecosia|startpage|yandex|baidu|search\?|tripadvisor|thefork|quandoo|deliveroo|justeat|just-eat|glovo|ubereats|facebook|instagram|twitter|tiktok|youtube|linkedin|google\.|yelp|foursquare|wikipedia|50toppizza|gamberorosso|italiangourmet|misterdelivery|dishcovery|restaurantguru|menuonline|paginegialle|virgilio|misterdelivery|booking\.com|expedia|scattidigusto|puntarellarossa|dissapore|reddit|pinterest|amazon|prenotazione|thefork/i;
+/* Piatti che per loro natura non contengono glutine: se il menu li propone, il
+   celiaco una scelta ce l'ha comunque — resta però la contaminazione in cucina,
+   per questo è un livello distinto e la nota invita sempre a chiedere. */
+const NATURALI = [
+  {re:/\btagliat[ae]\b|\bcostata\b|\bfiletto\b|\bbistecc|\bentrecote|\bfiorentina\b|\bpicanha\b|\bbrasat|\barrost|\bspiedo\b|\bgrigliat|\bbrace\b|\bcarne\b|\bmanzo\b|\bagnello\b|\bmaiale\b|\btartare\b/i, n:'carne'},
+  {re:/\brisott/i, n:'risotti'},
+  {re:/\bpesce\b|\bcrudo di mare\b|\bcrudit[àa]\b|\bbranzino\b|\borata\b|\btonno\b|\bsalmone\b|\bpolpo\b|\bgamber/i, n:'pesce'},
+  {re:/\binsalat/i, n:'insalate'},
+  {re:/\bformagg|\btaglier/i, n:'taglieri e formaggi'},
+  {re:/\bverdur|\bcontorn/i, n:'verdure'}
+];
 const GLUTINE = /senza glutine|senzaglutine|no[\s-]?glutine|gluten[\s-]?free|glutenfree|celiac|celiach|per celiaci|aic\b|impasto senza glutine|pizza senza glutine/i;
 const TIPI_NATURALMENTE_SG = new Set(['Ristorante', 'Carne', 'Pesce', 'Griglieria', 'Galletto']);
 
@@ -194,7 +205,7 @@ const tutti = (await listLocali()).filter(d => !gb(d.f, 'deleted'));
 const lista = tutti.filter(d => !SOLO_SENZA || gi(d.f, 'gf') === null).slice(DA, DA + QUANTI);
 console.log(`Locali da controllare: ${lista.length} (di ${tutti.length} totali)\n`);
 
-let sitiTrovati = 0, gfSi = 0, gfNo = 0, telefoni = 0;
+let sitiTrovati = 0, telefoni = 0, liv1 = 0, liv2 = 0, liv3 = 0, liv0 = 0;
 for (const d of lista) {
   const nome = gs(d.f, 'n') || d.id;
   const comune = gs(d.f, 't') || '';
@@ -218,7 +229,7 @@ for (const d of lista) {
     }
   }
 
-  let gf = 0;
+  let gf = 0, nota = null;
   const osm = await osmCerca(nome, comune);
   if (osm) {
     if (!sito && (osm.website || osm['contact:website'])) {
@@ -231,29 +242,58 @@ for (const d of lista) {
       telefoni++;
     }
     const dg = osm['diet:gluten_free'];
-    if (dg === 'yes' || dg === 'only' || dg === 'limited') gf = 1;
+    if (dg === 'yes' || dg === 'only') { gf = 1; nota = 'Senza glutine registrato su OpenStreetMap' + (dg === 'only' ? ' (locale interamente senza glutine)' : '') + '.'; }
+    else if (dg === 'limited') { gf = 2; nota = 'Alcune opzioni senza glutine (OpenStreetMap) — da confermare al locale.'; }
   }
-  if (!gf && sito) {
-    const t = await testoPagina(page, sito, true);
-    if (GLUTINE.test(t)) gf = 1;
+
+  /* 1) quello che dice il locale sul proprio sito (incluso il menu) */
+  let testoSito = '';
+  if (sito) {
+    testoSito = await testoPagina(page, sito, true);
+    if (!gf && GLUTINE.test(testoSito)) {
+      gf = 1;
+      nota = 'Il sito ufficiale parla di senza glutine' + (frase(testoSito) ? ': “' + frase(testoSito) + '”' : '.');
+    }
   }
+
+  /* 2) quello che dicono le fonti online */
   if (!gf) {
     const res = await cercaWeb(page, `"${nome}" ${comune} senza glutine`);
     const cita = res.filter(r => GLUTINE.test(r.titolo + ' ' + r.testo));
-    if (cita.length) gf = 1;
+    if (cita.length) {
+      gf = 2;
+      nota = 'Opzioni senza glutine segnalate online — da confermare al locale.';
+    }
   }
+
+  /* 3) piatti che per loro natura non contengono glutine: carne, pesce,
+        risotti, insalate. Non è una garanzia sulla contaminazione, ma vuol
+        dire che una scelta al tavolo c'è. */
   if (!gf) {
+    const fonte = testoSito || '';
     const tipi = ga(d.f, 'ty');
-    const etnico = tipi.includes('Cinese') || tipi.includes('Giapponese');
-    if (!etnico && tipi.some(t => TIPI_NATURALMENTE_SG.has(t))) gf = 1;
+    const trovati = NATURALI.filter(x => x.re.test(fonte)).map(x => x.n);
+    if (trovati.length >= 2) {
+      gf = 3;
+      nota = 'Nel menu ci sono piatti naturalmente senza glutine (' + trovati.slice(0, 3).join(', ') +
+             '): chiedi al locale come gestiscono la contaminazione.';
+    } else if (tipi.some(t => TIPI_NATURALMENTE_SG.has(t))) {
+      gf = 3;
+      nota = 'Tipologia con piatti naturalmente senza glutine (' + tipi.join(', ') +
+             '): chiedi al locale come gestiscono la contaminazione.';
+    }
   }
+
   agg.gf = { integerValue: String(gf) };
+  agg.gfNote = nota ? { stringValue: nota } : { nullValue: null };
   agg.updatedAt = { integerValue: String(Date.now()) };
   try { await patchDoc(d.id, agg); } catch (e) { console.log(`  ✗ ${nome}: ${String(e.message).slice(0, 60)}`); }
 
   await new Promise(r => setTimeout(r, 400));
-  if (gf === 1) { gfSi++; console.log(`✓ ${nome} (${comune}) — sì`); }
-  else { gfNo++; console.log(`· ${nome} (${comune}) — no`); }
+  if (gf === 1) { liv1++; console.log(`✓ ${nome} (${comune}) — dichiarato dal locale`); }
+  else if (gf === 2) { liv2++; console.log(`~ ${nome} (${comune}) — segnalato, da confermare`); }
+  else if (gf === 3) { liv3++; console.log(`· ${nome} (${comune}) — piatti naturalmente senza glutine`); }
+  else { liv0++; console.log(`  ${nome} (${comune}) — nessuna informazione`); }
 }
 await browser.close();
-console.log(`\nRisultato: ${gfSi} sì · ${gfNo} no · ${sitiTrovati} siti recuperati · ${telefoni} telefoni recuperati.`);
+console.log(`\nRisultato: ${liv1} dichiarati · ${liv2} segnalati · ${liv3} con piatti naturalmente senza glutine · ${liv0} senza informazione · ${sitiTrovati} siti · ${telefoni} telefoni.`);

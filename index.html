@@ -196,7 +196,7 @@ h2 span{color:var(--oro);font-style:italic}
 .tag.warn{background:rgba(240,131,124,.12);border-color:rgba(240,131,124,.4);color:var(--rosso)}
 .tag.open{background:rgba(99,211,160,.12);border-color:rgba(99,211,160,.4);color:var(--menta)}
 .tag.gf{background:rgba(99,211,160,.10);border-color:rgba(99,211,160,.35);color:var(--menta)}
-.tag.gf.no{background:rgba(255,255,255,.04);border-color:var(--linea);color:var(--nebbia)}
+.tag.gfnat{background:rgba(99,211,160,.06);border-color:rgba(99,211,160,.22);color:rgba(99,211,160,.85)}
 .blurb{font-size:13.5px;color:var(--nebbia);margin:9px 8px 0;font-style:italic;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .why{font-size:12px;color:var(--nebbia);margin:8px 8px 0}
 .gfnote{color:var(--menta);font-size:12.5px;line-height:1.45}
@@ -734,8 +734,10 @@ footer{color:rgba(169,176,196,.5);font-size:10px;text-align:center;padding:20px 
     </div>
     <div class="field"><label>Opzioni senza glutine</label>
       <select id="ed-gf">
-        <option value="0">No</option>
-        <option value="1">Sì</option>
+        <option value="0">Non lo so</option>
+        <option value="1">Sì, il locale lo dichiara</option>
+        <option value="2">Segnalato, da confermare</option>
+        <option value="3">Piatti naturalmente senza glutine</option>
       </select>
     </div>
     <div class="field"><label>Sito web</label><input id="ed-web" placeholder="https://…"></div>
@@ -1580,8 +1582,12 @@ function heroPhotoFor(r){
     .sort(function(a,b){ return b.date.localeCompare(a.date); });
   return ph.length ? ph[0].photo : null;
 }
+/* 1 = lo dichiara il locale · 2 = segnalato online, da confermare
+   3 = nel menu ci sono piatti naturalmente senza glutine (carne, pesce, risotti)
+   0 = non lo sappiamo — che NON vuol dire "non ce l'ha" */
 function gfLevel(r){
-  return Number(r.gf) > 0 ? 1 : 0;
+  const n = Number(r.gf) || 0;
+  return (n >= 1 && n <= 3) ? n : 0;
 }
 
 /* ---------- Motore di raccomandazione ---------- */
@@ -1701,6 +1707,10 @@ function renderSpot(){
       '<div class="tags">' + r.ty.map(function(t){ return '<span class="tag">' + esc(t) + '</span>'; }).join('') + closedTag + gfTag + (r.addedBy ? '<span class="tag">+ ' + esc(r.addedBy) + '</span>' : '') + '</div>' +
       (r.blurb ? '<p class="blurb">' + esc(r.blurb) + '</p>' : '') +
       (x.why && x.why.length ? '<div class="why">' + x.why.map(esc).join(' · ') + '</div>' : '') +
+      (r.gfNote ? '<div class="why gfnote">' + esc(r.gfNote) + '</div>' : '') +
+      (gfLevel(r) === 0 ? '<a class="gfcerca" target="_blank" rel="noopener" href="' +
+        esc('https://www.google.com/search?q=' + enc(r.n + ' ' + r.t + ' senza glutine')) +
+        '">Cerca opzioni senza glutine ›</a>' : '') +
       spotActionsHTML(r) +
     '</div>';
   const card = qs('#spotcard');
@@ -1787,9 +1797,11 @@ function cardHTML(r, opts){
   '</div>';
 }
 function gfTagHTML(r){
-  return gfLevel(r)
-    ? '<span class="tag gf">Senza glutine: sì</span>'
-    : '<span class="tag gf no">Senza glutine: no</span>';
+  const l = gfLevel(r);
+  if(l === 1) return '<span class="tag gf">Senza glutine</span>';
+  if(l === 2) return '<span class="tag gf">Senza glutine · da confermare</span>';
+  if(l === 3) return '<span class="tag gfnat">Piatti senza glutine</span>';
+  return '';                      // nessuna informazione: nessuna etichetta
 }
 function renderResults(){
   const el = qs('#results');
@@ -2177,7 +2189,7 @@ function openEdit(rid){
   zsel.value = zval;
   qs('#ed-price').value = r ? String(r.p||2) : '2';
   qs('#ed-web').value = r && r.website ? r.website : '';
-  qs('#ed-gf').value = r && Number(r.gf) > 0 ? '1' : '0';
+  qs('#ed-gf').value = String(gfLevel(r || {}));
   qs('#ed-phone').value = r && r.phone ? r.phone : '';
   qs('#ed-book').value = r && r.booking ? r.booking : '';
   S.edTypes = r ? r.ty.slice() : ['Ristorante'];
