@@ -299,7 +299,10 @@ h2 span{color:var(--oro);font-style:italic}
   #spot{padding:10px 14px}
   .hero{height:min(calc(100vw - 48px),38dvh,330px)}
   .hero .htit{bottom:10px}.hero .htit h3{font-size:22px}
-  .spot-body .tags,.spot-body .blurb,.spot-body .why,.spot-body .gfcerca{display:none}
+  /* sugli schermi bassi si tolgono i testi lunghi, ma le etichette (fra cui il
+     senza glutine) restano: sono una riga e servono per decidere */
+  .spot-body .blurb,.spot-body .why,.spot-body .gfcerca{display:none}
+  .spot-body .tags{margin:6px 0 2px}
   .acts{margin-top:6px}.acts2{margin-top:6px}.spot-foot{padding-top:7px}
 }
 
