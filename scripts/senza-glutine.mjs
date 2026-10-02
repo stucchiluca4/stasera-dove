@@ -4,7 +4,8 @@
    2) legge il sito ufficiale (home + eventuale pagina del menu) e cerca le
       parole del senza glutine; se il sito non dice nulla, guarda i risultati
       di ricerca (dove finiscono anche le recensioni che lo menzionano).
-   Esito salvato su ogni locale: gf = 1 (sì), 0 (no).
+   Esito salvato su ogni locale: gf = 1 (lo dichiara il locale), 2 (segnalato
+   online), 3 (nel menu ci sono piatti naturalmente senza glutine), 0 (non si sa).
    Nessuno scraping di TripAdvisor/Google: solo siti ufficiali e risultati di
    ricerca pubblici. */
 import { chromium } from 'playwright';
@@ -282,6 +283,14 @@ for (const d of lista) {
       nota = 'Tipologia con piatti naturalmente senza glutine (' + tipi.join(', ') +
              '): chiedi al locale come gestiscono la contaminazione.';
     }
+  }
+
+  /* mai declassare un dato più forte già salvato: se il locale lo dichiarava
+     (1) o era segnalato online (2) e oggi la pagina non risponde, resta com'era */
+  const prima = gi(d.f, 'gf') || 0;
+  if ((prima === 1 || prima === 2) && (gf === 0 || gf === 3)) {
+    gf = prima;
+    nota = gs(d.f, 'gfNote') || nota;
   }
 
   agg.gf = { integerValue: String(gf) };
