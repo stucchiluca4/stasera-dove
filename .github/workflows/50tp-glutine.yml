@@ -1,0 +1,30 @@
+name: Senza glutine dalla guida 50 Top Pizza
+
+on:
+  workflow_dispatch:
+    inputs:
+      scrivi:
+        description: 'Salva su Firestore (0 = solo prova)'
+        required: false
+        default: '1'
+        type: string
+
+permissions: {}
+
+jobs:
+  guida:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install Playwright
+        run: |
+          npm install --no-save playwright@1.49.1
+          npx playwright install --with-deps chromium
+      - name: Leggi la guida
+        run: node scripts/50tp-glutine.mjs
+        env:
+          SCRIVI: ${{ inputs.scrivi }}
