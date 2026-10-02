@@ -1,0 +1,30 @@
+name: Controlla le foto
+
+on:
+  workflow_dispatch:
+    inputs:
+      scrivi:
+        description: 'Cancella i link rotti (1 = sì)'
+        required: false
+        default: '0'
+        type: string
+
+permissions: {}
+
+jobs:
+  foto:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install Playwright
+        run: |
+          npm install --no-save playwright@1.49.1
+          npx playwright install --with-deps chromium
+      - name: Controlla
+        run: node scripts/controlla-foto.mjs
+        env:
+          SCRIVI: ${{ inputs.scrivi }}
