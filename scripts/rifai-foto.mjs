@@ -46,9 +46,9 @@ const host = u => { try { return new URL(u).hostname.replace(/^www\./, '').toLow
 const radice = h => h.split('.').slice(-2).join('.');
 
 /* portali, testate, social e domini da buttare: la foto non è loro da dare */
-const PORTALI = /tripadvisor|restaurantguru|thefork|quandoo|deliveroo|just-?eat|glovo|ubereats|sluurpy|piatti\.menu|menuweb|menu\.sluurpy|yelp|foursquare|facebook|fbcdn|instagram|cdninstagram|googleusercontent|gstatic|lucianopignataro|scattidigusto|italiaatavola|gamberorosso|dissapore|puntarellarossa|reportergourmet|identitagolose|cibotoday|agrodolce|garage\.pizza|thegreat\.pizza|50toppizza|pizzaontheroad|wanderlog|wanderboat|atly\.com|findmeglutenfree|forbes\.|lofficiel|where-e\.com|finedininglovers|archilovers|playstyle\.tv|invalcavallina|tourismmedia|michelin|pkvdominoqq|nuovaopinione|restaurantpro|apetime|bestogoo|mindtrip|happycow|celiaquita|glutoapp/i;
+const PORTALI = /tripadvisor|restaurantguru|thefork|quandoo|deliveroo|just-?eat|glovo|ubereats|sluurpy|piatti\.menu|menuweb|menu\.sluurpy|yelp|foursquare|facebook|fbcdn|instagram|cdninstagram|googleusercontent|gstatic|lucianopignataro|scattidigusto|italiaatavola|gamberorosso|dissapore|puntarellarossa|reportergourmet|identitagolose|cibotoday|agrodolce|garage\.pizza|thegreat\.pizza|50toppizza|pizzaontheroad|wanderlog|wanderboat|atly\.com|findmeglutenfree|forbes\.|lofficiel|where-e\.com|finedininglovers|archilovers|invalcavallina|tourismmedia|michelin|pkvdominoqq|nuovaopinione|restaurantpro|apetime|bestogoo|mindtrip|happycow|celiaquita|glutoapp/i;
 /* piattaforme che ospitano il sito del locale: contano come "suo" */
-const PIATTAFORME = /wixstatic|squarespace|shopify|website-files|cdn-website|website\.dish\.co|qromo\.io|globaluserfiles|amazonaws|java-injection|vercel\.app|netlify|github\.io|altervista|imgix|cloudfront|b-cdn\.net|r2\.dev|sirv\.com|firebasestorage|storage\.googleapis|cloudinary/i;
+const PIATTAFORME = /playstyle\.tv|wixstatic|squarespace|shopify|website-files|cdn-website|website\.dish\.co|qromo\.io|globaluserfiles|amazonaws|java-injection|vercel\.app|netlify|github\.io|altervista|imgix|cloudfront|b-cdn\.net|r2\.dev|sirv\.com|firebasestorage|storage\.googleapis|cloudinary/i;
 
 function provenienza(photoUrl, website) {
   const h = host(photoUrl), hs = host(website || '');
@@ -79,6 +79,16 @@ const CONSENSO = [
   'a:has-text("Accetta")', 'button:has-text("Ho capito")', 'button:has-text("OK")'
 ];
 const BRUTTE = /logo|icon|favicon|sprite|placeholder|badge|payoff|whatsapp|tripadvisor|avatar|banner-?cookie/i;
+/* elementi di grafica: sfondi, texture, trame. Non sono foto del locale */
+const GRAFICA = /(^|[-_/])bgs?[-_.]|background|texture|pattern|overlay|gradient|noise|watermark|divider|separator/i;
+/* un candidato buono non può stare su un portale: certi siti dei locali
+   incorporano le foto di Just Eat o di TripAdvisor, e quelle non si prendono */
+function candidatoAmmesso(u) {
+  if (!u) return false;
+  let h = ''; try { h = new URL(u).hostname.toLowerCase(); } catch { return false; }
+  if (PORTALI.test(h)) return false;
+  return !BRUTTE.test(u) && !GRAFICA.test(u);
+}
 
 /* cerca una foto sul sito del locale: og:image -> immagine piu grande ->
    sfondo piu grande -> schermata della sua homepage */
@@ -105,7 +115,7 @@ async function cercaFoto(ctx, sito) {
       return m?.content || null;
     });
     if (c) { try { c = new URL(c, page.url()).href.replace(/^http:/, 'https:'); } catch { c = null; } }
-    if (c && BRUTTE.test(c)) c = null;
+    if (c && !candidatoAmmesso(c)) c = null;
     if (c && !(await immagineBuona(c, 700, 25000))) c = null;
     if (c) return { url: c, come: 'og:image' };
 
@@ -116,6 +126,7 @@ async function cercaFoto(ctx, sito) {
         .filter(x => x.src && x.src.startsWith('https') && x.w >= 700 && x.h >= 400 && !bad.test(x.src))
         .sort((a, b) => b.a - a.a)[0]?.src || null;
     });
+    if (c && !candidatoAmmesso(c)) c = null;
     if (c && !(await immagineBuona(c, 700, 25000))) c = null;
     if (c) return { url: c, come: 'foto del sito' };
 
@@ -129,6 +140,7 @@ async function cercaFoto(ctx, sito) {
       }
       return best;
     });
+    if (c && !candidatoAmmesso(c)) c = null;
     if (c && !(await immagineBuona(c, 700, 25000))) c = null;
     if (c) return { url: c, come: 'sfondo del sito' };
 
@@ -182,6 +194,10 @@ for (const { d, motivo, togliSempre } of lavoro) {
       console.log(`✂ ${nome} — ${motivo}, nessun sito ufficiale: foto rimossa`); tolte++;
     } else { console.log(`— ${nome} — ${motivo}, nessun sito ufficiale`); invariate++; }
     continue;
+  }
+  if (PORTALI.test(host(sito))) {
+    console.log(`— ${nome} — il "sito" salvato è la pagina di un portale (${host(sito)}), non un sito ufficiale`);
+    invariate++; continue;
   }
   const r = await cercaFoto(ctx, sito);
   if (r && (r.url || r.dataUrl)) {
