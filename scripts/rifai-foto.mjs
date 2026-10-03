@@ -84,7 +84,7 @@ const BRUTTE = /logo|icon|favicon|sprite|placeholder|badge|payoff|whatsapp|tripa
 const GRAFICA = /(^|[^a-z])bgs?[-_.]|background|texture|pattern|overlay|gradient|noise|watermark|divider|separator|under-construction|\/plugins\/|50-?top|gambero|award|premio|classifica|marchio|risorsa[-_]?\d|asset[-_]?\d/i;
 /* un candidato buono deve stare sul sito del locale (o sulla piattaforma che
    lo ospita) ed essere una fotografia: niente portali, niente PNG di grafica */
-function candidatoAmmesso(u, sito) {
+function candidatoAmmesso(u, sito, permettiPng) {
   if (!u) return false;
   let h = '', percorso = '';
   try { const x = new URL(u); h = x.hostname.toLowerCase(); percorso = decodeURIComponent(x.pathname + x.search); }
@@ -93,7 +93,9 @@ function candidatoAmmesso(u, sito) {
   const hs = host(sito || '');
   const suo = (hs && radice(h.replace(/^www\./, '')) === radice(hs)) || PIATTAFORME.test(h);
   if (!suo) return false;                                   // foto di un altro sito: non è sua
-  if (!/\.(jpe?g|webp|avif)(\?|$|&)/i.test(percorso)) return false;   // le foto non sono PNG o GIF
+  const fotografia = /\.(jpe?g|webp|avif)(\?|$|&)/i.test(percorso);
+  const senzaEstensione = !/\.[a-z0-9]{2,5}(\?|$|&)/i.test(percorso);
+  if (!fotografia && !senzaEstensione && !permettiPng) return false;   // PNG e GIF: solo se grandi (vedi sotto)
   return !BRUTTE.test(decodeURIComponent(u)) && !GRAFICA.test(decodeURIComponent(u));
 }
 
@@ -122,20 +124,26 @@ async function cercaFoto(ctx, sito) {
       return m?.content || null;
     });
     if (c) { try { c = new URL(c, page.url()).href.replace(/^http:/, 'https:'); } catch { c = null; } }
-    if (c && !candidatoAmmesso(c, sito)) c = null;
-    if (c && !(await immagineBuona(c, 700, 25000))) c = null;
+    if (c) {
+      const pesante = await immagineBuona(c, 700, 80000);
+      if (!candidatoAmmesso(c, sito, !!pesante)) c = null;
+      else if (!pesante && !(await immagineBuona(c, 700, 25000))) c = null;
+    }
     if (c) return { url: c, come: 'og:image' };
 
-    c = await page.evaluate(() => {
+    const grandi = await page.evaluate(() => {
       const bad = /logo|icon|favicon|sprite|placeholder|whatsapp|tripadvisor|badge|payoff|avatar/i;
       return [...document.images]
-        .map(i => ({ src: i.currentSrc || i.src, a: i.naturalWidth * i.naturalHeight, w: i.naturalWidth, h: i.naturalHeight }))
-        .filter(x => x.src && x.src.startsWith('https') && x.w >= 700 && x.h >= 400 && !bad.test(x.src))
-        .sort((a, b) => b.a - a.a)[0]?.src || null;
+        .map(i => ({ src: i.currentSrc || i.src, a: i.naturalWidth * i.naturalHeight, w: i.naturalWidth }))
+        .filter(x => x.src && x.src.startsWith('https') && x.w >= 700 && !bad.test(x.src))
+        .sort((a, b) => b.a - a.a).slice(0, 6);
     });
-    if (c && !candidatoAmmesso(c, sito)) c = null;
-    if (c && !(await immagineBuona(c, 700, 25000))) c = null;
-    if (c) return { url: c, come: 'foto del sito' };
+    for (const g of grandi) {
+      if (!candidatoAmmesso(g.src, sito, g.w >= 1000)) continue;
+      if (!(await immagineBuona(g.src, 700, g.w >= 1000 ? 40000 : 25000))) continue;
+      return { url: g.src, come: 'foto del sito' };
+    }
+    c = null;
 
     c = await page.evaluate(() => {
       let best = null, area = 0; const bad = /logo|icon|sprite/i;
@@ -152,16 +160,23 @@ async function cercaFoto(ctx, sito) {
     if (c) return { url: c, come: 'sfondo del sito' };
 
     /* ultima possibilità: la schermata della loro homepage */
-    const coperta = await page.evaluate(() => {
-      for (const el of document.querySelectorAll('[id*=cookie i],[class*=cookie i],[id*=consent i],[class*=consent i],[id*=iubenda i],[id*=onetrust i]')) {
-        const s = getComputedStyle(el), r = el.getBoundingClientRect();
-        if (s.display !== 'none' && s.visibility !== 'hidden' && r.width * r.height > 0.25 * innerWidth * innerHeight) return true;
+    /* togliamo di mezzo banner e sovrapposizioni, così la schermata è pulita */
+    await page.evaluate(() => {
+      const sospetti = '[id*=cookie i],[class*=cookie i],[id*=consent i],[class*=consent i],[id*=iubenda i],[id*=onetrust i],[class*=cmplz i],[id*=gdpr i],[class*=gdpr i],[class*=modal i],[class*=popup i],[class*=overlay i]';
+      for (const el of document.querySelectorAll(sospetti)) { try { el.remove(); } catch {} }
+      for (const el of document.querySelectorAll('body *')) {
+        const st = getComputedStyle(el), r = el.getBoundingClientRect();
+        if ((st.position === 'fixed' || st.position === 'sticky') && r.width * r.height > 0.3 * innerWidth * innerHeight) {
+          try { el.remove(); } catch {}
+        }
       }
-      return false;
+      document.documentElement.style.overflow = 'auto';
+      document.body.style.overflow = 'auto';
     });
+    await page.waitForTimeout(600);
     const spazzatura = await page.evaluate(() =>
       /attendi che la tua richiesta|checking the site connection|sito web scaduto|suspected phishing|access denied|are you a robot|domain (is )?for sale/i.test(document.body?.innerText || ''));
-    if (coperta || spazzatura) return null;
+    if (spazzatura) return null;
     const buf = await page.screenshot({ type: 'jpeg', quality: 68, clip: { x: 0, y: 0, width: 1200, height: 675 } });
     if (buf.length < 25000) return null;
     const dataUrl = 'data:image/jpeg;base64,' + buf.toString('base64');
