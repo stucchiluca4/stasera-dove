@@ -103,9 +103,9 @@ async function cercaFoto(ctx, sito) {
   const page = await ctx.newPage();
   try {
     let su = false;
-    for (let t = 0; t < 2 && !su; t++) {
-      try { await page.goto(sito, { waitUntil: 'domcontentloaded', timeout: 40000 }); su = true; }
-      catch (e) { if (t === 1) throw e; }
+    for (let t = 0; t < 3 && !su; t++) {
+      try { await page.goto(sito, { waitUntil: 'domcontentloaded', timeout: 30000 + t * 20000 }); su = true; }
+      catch (e) { if (t === 2) throw e; await page.waitForTimeout(1500); }
     }
     await page.waitForTimeout(3200);
     for (const sel of CONSENSO) {
@@ -191,7 +191,7 @@ console.log(SCRIVI ? 'Modalità: salvo su Firestore\n' : 'Modalità: solo prova,
 const browser = await chromium.launch();
 const ctx = await browser.newContext({ viewport: { width: 1200, height: 800 }, userAgent: UA, locale: 'it-IT' });
 
-let sostituite = 0, nuove = 0, tolte = 0, invariate = 0;
+let sostituite = 0, nuove = 0, tolte = 0, invariate = 0, daRiprovare = 0;
 for (const { d, motivo, togliSempre } of lavoro) {
   const nome = gs(d.f, 'n') || d.id;
   const sito = gs(d.f, 'website');
@@ -216,14 +216,18 @@ for (const { d, motivo, togliSempre } of lavoro) {
       console.log(`✓ ${nome} — ${motivo} → ${r.come}${r.url ? ': ' + r.url.slice(0, 80) : ''}`);
       if (togliSempre) sostituite++; else nuove++;
     } catch (e) { console.log(`✗ ${nome}: ${e.message}`); invariate++; }
+  } else if (r?.errore) {
+    /* il sito non ha risposto: può essere un problema di rete di passaggio.
+       Non si cancella niente, si riprova a un giro successivo. */
+    console.log(`? ${nome} — ${motivo}, il sito non ha risposto (${r.errore}): lasciato com'è, da riprovare`);
+    daRiprovare++;
   } else {
-    const perche = r?.errore ? 'sito non raggiungibile (' + r.errore + ')' : 'niente di buono sul sito';
     if (togliSempre) {
       await patchDoc(d.id, { photoUrl: { nullValue: null }, updatedAt: { integerValue: String(Date.now()) } });
-      console.log(`✂ ${nome} — ${motivo}, ${perche}: foto rimossa, resta la copertina`); tolte++;
-    } else { console.log(`— ${nome} — ${motivo}, ${perche}`); invariate++; }
+      console.log(`✂ ${nome} — ${motivo}, sul sito non c'è una foto usabile: foto rimossa, resta la copertina`); tolte++;
+    } else { console.log(`— ${nome} — ${motivo}, sul sito non c'è una foto usabile`); invariate++; }
   }
   await new Promise(r2 => setTimeout(r2, 250));
 }
 await browser.close();
-console.log(`\nRisultato: ${sostituite} foto di portali sostituite con una del sito · ${nuove} foto nuove a chi non ne aveva · ${tolte} rimosse senza sostituto · ${invariate} invariate.`);
+console.log(`\nRisultato: ${sostituite} foto di portali sostituite con una del sito · ${nuove} foto nuove a chi non ne aveva · ${tolte} rimosse perché sul sito non c'è niente · ${daRiprovare} da riprovare (sito muto) · ${invariate} invariate.`);
