@@ -79,15 +79,22 @@ const CONSENSO = [
   'a:has-text("Accetta")', 'button:has-text("Ho capito")', 'button:has-text("OK")'
 ];
 const BRUTTE = /logo|icon|favicon|sprite|placeholder|badge|payoff|whatsapp|tripadvisor|avatar|banner-?cookie/i;
-/* elementi di grafica: sfondi, texture, trame. Non sono foto del locale */
-const GRAFICA = /(^|[-_/])bgs?[-_.]|background|texture|pattern|overlay|gradient|noise|watermark|divider|separator/i;
-/* un candidato buono non può stare su un portale: certi siti dei locali
-   incorporano le foto di Just Eat o di TripAdvisor, e quelle non si prendono */
-function candidatoAmmesso(u) {
+/* elementi di grafica: sfondi, texture, trame, pagine in costruzione, badge
+   dei premi e logo esportati. Niente di tutto questo è una foto del locale */
+const GRAFICA = /(^|[^a-z])bgs?[-_.]|background|texture|pattern|overlay|gradient|noise|watermark|divider|separator|under-construction|\/plugins\/|50-?top|gambero|award|premio|classifica|marchio|risorsa[-_]?\d|asset[-_]?\d/i;
+/* un candidato buono deve stare sul sito del locale (o sulla piattaforma che
+   lo ospita) ed essere una fotografia: niente portali, niente PNG di grafica */
+function candidatoAmmesso(u, sito) {
   if (!u) return false;
-  let h = ''; try { h = new URL(u).hostname.toLowerCase(); } catch { return false; }
+  let h = '', percorso = '';
+  try { const x = new URL(u); h = x.hostname.toLowerCase(); percorso = decodeURIComponent(x.pathname + x.search); }
+  catch { return false; }
   if (PORTALI.test(h)) return false;
-  return !BRUTTE.test(u) && !GRAFICA.test(u);
+  const hs = host(sito || '');
+  const suo = (hs && radice(h.replace(/^www\./, '')) === radice(hs)) || PIATTAFORME.test(h);
+  if (!suo) return false;                                   // foto di un altro sito: non è sua
+  if (!/\.(jpe?g|webp|avif)(\?|$|&)/i.test(percorso)) return false;   // le foto non sono PNG o GIF
+  return !BRUTTE.test(decodeURIComponent(u)) && !GRAFICA.test(decodeURIComponent(u));
 }
 
 /* cerca una foto sul sito del locale: og:image -> immagine piu grande ->
@@ -115,7 +122,7 @@ async function cercaFoto(ctx, sito) {
       return m?.content || null;
     });
     if (c) { try { c = new URL(c, page.url()).href.replace(/^http:/, 'https:'); } catch { c = null; } }
-    if (c && !candidatoAmmesso(c)) c = null;
+    if (c && !candidatoAmmesso(c, sito)) c = null;
     if (c && !(await immagineBuona(c, 700, 25000))) c = null;
     if (c) return { url: c, come: 'og:image' };
 
@@ -126,7 +133,7 @@ async function cercaFoto(ctx, sito) {
         .filter(x => x.src && x.src.startsWith('https') && x.w >= 700 && x.h >= 400 && !bad.test(x.src))
         .sort((a, b) => b.a - a.a)[0]?.src || null;
     });
-    if (c && !candidatoAmmesso(c)) c = null;
+    if (c && !candidatoAmmesso(c, sito)) c = null;
     if (c && !(await immagineBuona(c, 700, 25000))) c = null;
     if (c) return { url: c, come: 'foto del sito' };
 
@@ -140,7 +147,7 @@ async function cercaFoto(ctx, sito) {
       }
       return best;
     });
-    if (c && !candidatoAmmesso(c)) c = null;
+    if (c && !candidatoAmmesso(c, sito)) c = null;
     if (c && !(await immagineBuona(c, 700, 25000))) c = null;
     if (c) return { url: c, come: 'sfondo del sito' };
 
