@@ -16,6 +16,10 @@ const API_KEY = 'AIzaSyB-m2ee3o0HVsy2aLanPPZUgBlJNQO8qUw';
 const BASE = `https://firestore.googleapis.com/v1/projects/${PROJECT}/databases/(default)/documents`;
 const SCRIVI = process.env.SCRIVI !== '0';
 const SOLO = (process.env.SOLO || '').trim();      // un nome per provare su un solo locale
+/* PICCOLE=1: invece dei portali, rifà le foto del sito del locale che sono
+   troppo piccole (spesso un logo o una miniatura). Sostituisce solo se trova
+   di meglio e non cancella mai niente. */
+const PICCOLE = process.env.PICCOLE === '1';
 const UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Safari/605.1.15';
 const UA_TEL = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1';
 const APP = 'https://stucchiluca4.github.io';
@@ -187,6 +191,22 @@ async function cercaFoto(ctx, sito) {
   } finally { await page.close(); }
 }
 
+/* apre un'immagine nel browser e ne legge larghezza, altezza e peso */
+async function misura(ctx, url) {
+  const p = await ctx.newPage();
+  try {
+    const resp = await p.goto(url, { waitUntil: 'load', timeout: 25000 });
+    const ct = resp ? (resp.headers()['content-type'] || '') : '';
+    if (!resp || resp.status() >= 400 || !/image/i.test(ct)) return null;
+    let peso = 0; try { peso = (await resp.body()).length; } catch {}
+    const d = await p.evaluate(() => { const i = document.images[0]; return i ? { w: i.naturalWidth, h: i.naturalHeight } : null; });
+    return d ? { ...d, peso } : null;
+  } catch { return null; } finally { await p.close(); }
+}
+const piccola = m => !m || m.w < 700 || m.peso < 25000;
+/* un logo o un'icona: minuscolo, leggerissimo o quadratino */
+const quasiLogo = m => !m || m.w < 400 || m.peso < 15000 || (m.w <= 320 && Math.abs(m.w - m.h) < 40);
+
 /* ---------- lavoro ---------- */
 const tutti = (await listLocali()).filter(d => !gb(d.f, 'deleted'));
 const lavoro = [];
@@ -205,6 +225,43 @@ console.log(SCRIVI ? 'Modalità: salvo su Firestore\n' : 'Modalità: solo prova,
 
 const browser = await chromium.launch();
 const ctx = await browser.newContext({ viewport: { width: 1200, height: 800 }, userAgent: UA, locale: 'it-IT' });
+
+if (PICCOLE) {
+  const candidati = tutti.filter(d => !gs(d.f, 'photo') && gs(d.f, 'photoUrl') && gs(d.f, 'website') &&
+    provenienza(gs(d.f, 'photoUrl'), gs(d.f, 'website')) !== 'portale' &&
+    (!SOLO || gs(d.f, 'n') === SOLO));
+  console.log(`Foto dal sito del locale da misurare: ${candidati.length}\n`);
+  let migliorate = 0, tenute = 0, ok = 0;
+  for (const d of candidati) {
+    const nome = gs(d.f, 'n') || d.id, sito = gs(d.f, 'website'), ora = gs(d.f, 'photoUrl');
+    const m = await misura(ctx, ora);
+    if (!piccola(m)) { ok++; continue; }
+    const descr = m ? `${m.w}×${m.h}, ${Math.round(m.peso / 1024)} KB` : 'non si carica';
+    const r = await cercaFoto(ctx, sito);
+    let meglio = false, come = '';
+    if (r?.url && r.url !== ora) {
+      const n = await misura(ctx, r.url);
+      /* più larga di almeno un terzo e comunque da 700 px in su */
+      if (n && n.w >= 700 && n.w >= (m ? m.w : 0) * 1.3 && n.peso >= 25000) { meglio = true; come = `${r.come} ${n.w}×${n.h}`; }
+    } else if (r?.dataUrl && quasiLogo(m)) {
+      meglio = true; come = 'schermata del sito';           // meglio la loro homepage che un logo
+    }
+    if (meglio) {
+      const campi = { updatedAt: { integerValue: String(Date.now()) } };
+      if (r.url) { campi.photoUrl = { stringValue: r.url }; }
+      else { campi.photo = { stringValue: r.dataUrl }; campi.photoUrl = { nullValue: null }; }
+      try { await patchDoc(d.id, campi); migliorate++; console.log(`✓ ${nome} — era ${descr} → ${come}`); }
+      catch (e) { console.log(`✗ ${nome}: ${e.message}`); tenute++; }
+    } else {
+      tenute++;
+      console.log(`— ${nome} — ${descr}: ${r?.errore ? 'il sito non ha risposto' : 'sul sito niente di più grande'}, tenuta`);
+    }
+    await new Promise(r2 => setTimeout(r2, 250));
+  }
+  await browser.close();
+  console.log(`\nRisultato: ${migliorate} foto piccole sostituite con una più grande · ${tenute} tenute com'erano · ${ok} già buone.`);
+  process.exit(0);
+}
 
 let sostituite = 0, nuove = 0, tolte = 0, invariate = 0, daRiprovare = 0;
 for (const { d, motivo, togliSempre } of lavoro) {

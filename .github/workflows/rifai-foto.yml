@@ -8,6 +8,11 @@ on:
         required: false
         default: '1'
         type: string
+      piccole:
+        description: 'Rifai solo le foto troppo piccole (1 = sì)'
+        required: false
+        default: '0'
+        type: string
       solo:
         description: 'Un solo locale, per nome (facoltativo)'
         required: false
@@ -34,3 +39,4 @@ jobs:
         env:
           SCRIVI: ${{ inputs.scrivi }}
           SOLO: ${{ inputs.solo }}
+          PICCOLE: ${{ inputs.piccole }}
