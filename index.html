@@ -552,6 +552,7 @@ nav button.dot b::after{content:"";position:absolute;top:-2px;right:-8px;width:8
 .empty{color:var(--nebbia);text-align:center;padding:40px 20px;font-size:14px;line-height:1.6}
 .empty b{font-size:17px;font-weight:700;display:block;margin-bottom:8px;color:var(--crema);font-family:'Playfair Display',Georgia,serif}
 .arc-tools{display:flex;flex-direction:column;gap:8px;margin:22px 0 8px}
+.eur{white-space:nowrap}
 .herocover{position:absolute;inset:0}
 .heroimg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center}
 .stat .v,.apts{font-variant-numeric:tabular-nums}
@@ -975,7 +976,10 @@ function logoHTML(name, website){
 /* Scala prezzo sempre leggibile: le € piene + le mancanti spente (max 4). */
 function priceHTML(p){
   p = Math.min(4, Math.max(1, p||2));
-  return '€'.repeat(p) + (p<4 ? '<i>' + '€'.repeat(4-p) + '</i>' : '');
+  /* il prezzo non va mai a capo a metà, e chi usa la lettura vocale sente
+     «prezzo 2 su 4» invece di «euro euro euro euro» */
+  return '<span class="eur" role="img" aria-label="Prezzo ' + p + ' su 4">' + '€'.repeat(p) +
+    (p<4 ? '<i>' + '€'.repeat(4-p) + '</i>' : '') + '</span>';
 }
 
 /* ---------- V8 · foto di riserva per tipologia ----------
@@ -1787,7 +1791,7 @@ function cardHTML(r, opts){
   const cover = '<div class="covbox has-photo">' + coverHTML(r, 'cardcover') +
     '<img class="cardcover-img" data-fallback="' + esc(fallbackPhotoFor(r)) + '" src="' + esc(cimg) + '" alt="Sala o proposta di ' + esc(r.n) + '" loading="lazy">' +
     (cph ? '' : '<span class="fbnote">FOTO D\u2019AMBIENTE</span>') + '</div>';
-  const meta = [esc(r.t) + (r.z ? ', ' + esc(r.z) : ''), priceHTML(r.p), (r.ty||[]).map(esc).join(', ')]
+  const meta = [esc(r.t) + (r.z && (r.t||'').toLowerCase().indexOf(r.z.toLowerCase()) === -1 ? ', ' + esc(r.z) : ''), priceHTML(r.p), (r.ty||[]).map(esc).join(', ')]
     .filter(Boolean).join(' &nbsp;|&nbsp; ');
   return '' +
   '<div class="card' + (opts.pick ? ' pick' : '') + '"' + headAttr + '>' +
