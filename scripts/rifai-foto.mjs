@@ -20,6 +20,22 @@ const SOLO = (process.env.SOLO || '').trim();      // un nome per provare su un 
    troppo piccole (spesso un logo o una miniatura). Sostituisce solo se trova
    di meglio e non cancella mai niente. */
 const PICCOLE = process.env.PICCOLE === '1';
+/* SCHERMATE=1: rifà le schermate di homepage salvate come foto, che con il
+   vecchio metodo mostravano menu e scritte del sito */
+const SCHERMATE = process.env.SCHERMATE === '1';
+/* larghezza e altezza di un JPEG in data URL, lette dall'intestazione */
+function dimJpeg(dataUrl) {
+  try {
+    const b = Buffer.from(dataUrl.split(',')[1], 'base64');
+    for (let i = 2; i < b.length - 9;) {
+      if (b[i] !== 0xFF) { i++; continue; }
+      const m = b[i + 1], len = b.readUInt16BE(i + 2);
+      if (m >= 0xC0 && m <= 0xC3) return { h: b.readUInt16BE(i + 5), w: b.readUInt16BE(i + 7) };
+      i += 2 + len;
+    }
+  } catch {}
+  return null;
+}
 const UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Safari/605.1.15';
 const UA_TEL = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1';
 const APP = 'https://stucchiluca4.github.io';
@@ -181,7 +197,34 @@ async function cercaFoto(ctx, sito) {
     const spazzatura = await page.evaluate(() =>
       /attendi che la tua richiesta|checking the site connection|sito web scaduto|suspected phishing|access denied|are you a robot|domain (is )?for sale/i.test(document.body?.innerText || ''));
     if (spazzatura) return null;
-    const buf = await page.screenshot({ type: 'jpeg', quality: 68, clip: { x: 0, y: 0, width: 1200, height: 675 } });
+    /* la schermata deve sembrare una foto, non una pagina web: si nascondono
+       menu, barre, scritte, pulsanti e loghi, e restano le immagini */
+    const resta = await page.evaluate(() => {
+      for (const el of document.querySelectorAll('body *')) {
+        const st = getComputedStyle(el), r = el.getBoundingClientRect();
+        if ((st.position === 'fixed' || st.position === 'sticky') && r.top < 160 && r.height < 220) { try { el.remove(); } catch {} }
+      }
+      const css = document.createElement('style');
+      css.textContent = 'nav,[role=navigation],h1,h2,h3,h4,h5,h6,p,a,button,li,label,span,small,strong,em,b,i,blockquote,' +
+        'input,select,textarea,form,svg,iframe,[class*=logo i],[id*=logo i]{visibility:hidden!important}' +
+        'img,picture,video,canvas{visibility:visible!important}' +
+        'img[src*=logo i],img[alt*=logo i],img[class*=logo i]{visibility:hidden!important}';
+      document.head.appendChild(css);
+      /* c'è davvero un'immagine grande in alto? altrimenti la schermata
+         sarebbe un rettangolo vuoto: meglio niente */
+      const area = (r) => Math.max(0, Math.min(r.right, 1200) - Math.max(r.left, 0)) * Math.max(0, Math.min(r.bottom, 675) - Math.max(r.top, 0));
+      let meglio = 0;
+      for (const el of document.querySelectorAll('img,picture,video,canvas,body *')) {
+        const r = el.getBoundingClientRect(); const a = area(r); if (a < 1) continue;
+        const st = getComputedStyle(el);
+        const media = /^(IMG|PICTURE|VIDEO|CANVAS)$/.test(el.tagName) || /url\(/.test(st.backgroundImage);
+        if (media && st.visibility !== 'hidden' && a > meglio) meglio = a;
+      }
+      return meglio / (1200 * 675);
+    });
+    await page.waitForTimeout(500);
+    if (resta < 0.35) return null;
+    const buf = await page.screenshot({ type: 'jpeg', quality: 72, clip: { x: 0, y: 0, width: 1200, height: 675 } });
     if (buf.length < 25000) return null;
     const dataUrl = 'data:image/jpeg;base64,' + buf.toString('base64');
     if (dataUrl.length > 900000) return null;
@@ -225,6 +268,32 @@ console.log(SCRIVI ? 'Modalità: salvo su Firestore\n' : 'Modalità: solo prova,
 
 const browser = await chromium.launch();
 const ctx = await browser.newContext({ viewport: { width: 1200, height: 800 }, userAgent: UA, locale: 'it-IT' });
+
+if (SCHERMATE) {
+  const vecchie = tutti.filter(d => {
+    const ph = gs(d.f, 'photo');
+    if (!ph || !gs(d.f, 'website') || !/^data:image\/jpeg/.test(ph)) return false;
+    const dm = dimJpeg(ph);
+    return dm && dm.w === 1200 && dm.h === 675;     // solo le schermate fatte da noi: le foto vostre hanno altre misure
+  }).filter(d => !SOLO || gs(d.f, 'n') === SOLO);
+  console.log(`Schermate di homepage da rifare: ${vecchie.length}\n`);
+  let rifatte = 0, tenute = 0;
+  for (const d of vecchie) {
+    const nome = gs(d.f, 'n') || d.id;
+    const r = await cercaFoto(ctx, gs(d.f, 'website'));
+    if (r?.url || r?.dataUrl) {
+      const campi = { updatedAt: { integerValue: String(Date.now()) } };
+      if (r.url) { campi.photoUrl = { stringValue: r.url }; campi.photo = { nullValue: null }; }
+      else { campi.photo = { stringValue: r.dataUrl }; }
+      try { await patchDoc(d.id, campi); rifatte++; console.log(`✓ ${nome} → ${r.come}`); }
+      catch (e) { tenute++; console.log(`✗ ${nome}: ${e.message}`); }
+    } else { tenute++; console.log(`— ${nome}: ${r?.errore ? 'il sito non ha risposto' : 'in alto non c’è un’immagine grande'}, tenuta la vecchia`); }
+    await new Promise(r2 => setTimeout(r2, 250));
+  }
+  await browser.close();
+  console.log(`\nRisultato: ${rifatte} schermate rifatte · ${tenute} tenute com'erano.`);
+  process.exit(0);
+}
 
 if (PICCOLE) {
   const candidati = tutti.filter(d => !gs(d.f, 'photo') && gs(d.f, 'photoUrl') && gs(d.f, 'website') &&

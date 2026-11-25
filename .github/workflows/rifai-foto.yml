@@ -13,6 +13,11 @@ on:
         required: false
         default: '0'
         type: string
+      schermate:
+        description: 'Rifai le schermate delle homepage (1 = sì)'
+        required: false
+        default: '0'
+        type: string
       solo:
         description: 'Un solo locale, per nome (facoltativo)'
         required: false
@@ -40,3 +45,4 @@ jobs:
           SCRIVI: ${{ inputs.scrivi }}
           SOLO: ${{ inputs.solo }}
           PICCOLE: ${{ inputs.piccole }}
+          SCHERMATE: ${{ inputs.schermate }}
