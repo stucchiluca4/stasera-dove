@@ -311,7 +311,10 @@ if (PICCOLE) {
     if (r?.url && r.url !== ora) {
       const n = await misura(ctx, r.url);
       /* più larga di almeno un terzo e comunque da 700 px in su */
-      if (n && n.w >= 700 && n.w >= (m ? m.w : 0) * 1.3 && n.peso >= 25000) { meglio = true; come = `${r.come} ${n.w}×${n.h}`; }
+      /* più larga di almeno un terzo, da 700 px in su, e non un volantino:
+         un'immagine alta più di 1,6 volte la larghezza è quasi sempre un menu o una locandina */
+      if (n && n.w >= 700 && n.w >= (m ? m.w : 0) * 1.3 && n.peso >= 25000 && n.h <= n.w * 1.6) { meglio = true; come = `${r.come} ${n.w}×${n.h}`; }
+      else if (n && n.h > n.w * 1.6) come = 'scartata: sembra un volantino';
     } else if (r?.dataUrl && quasiLogo(m)) {
       meglio = true; come = 'schermata del sito';           // meglio la loro homepage che un logo
     }
